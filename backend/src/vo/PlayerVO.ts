@@ -9,10 +9,10 @@ export default class PlayerVO{
     number: number = 0;
     // 词语
     word: string = "";
-    // 各轮描述
-    desc: string[] = [];
-    // 投票前按顺序进行的发言
-    speak: string[] = [];
+    // // 各轮描述
+    // desc: string[] = [];
+    // // 投票前按顺序进行的发言
+    // speak: string[] = [];
     // 当前是否是AI
     isAi: boolean = false;
 

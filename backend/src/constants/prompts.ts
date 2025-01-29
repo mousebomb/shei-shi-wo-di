@@ -19,3 +19,4 @@ export const PROMPT_GAME_RULES = readTextFile(path.join(__dirname, 'GAME_RULE.tx
 export const PROMPT_ZhuChiRen = readTextFile(path.join(__dirname, 'ZhuChiRen.md'));
 export const PROMPT_UnderCover = readTextFile(path.join(__dirname, 'WoDi.md'));
 export const PROMPT_Commoner = readTextFile(path.join(__dirname, 'PingMin.md'));
+export const PROMPT_DescribeYourWord =`现在是第【round】轮 【描述阶段】，第【order】位发言者是你，请你现在对你的词进行描述吧。`;

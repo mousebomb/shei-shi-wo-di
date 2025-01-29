@@ -22,9 +22,11 @@ export class RoomManager {
         const room = new RoomVO();
         //为room创建玩家
         room.roomId = userId;
-        room.round =1;
+        // 初始值为0 表示未开始
+        room.round = 0;
         room.players = [];
-        room.currentPlayer = 1;
+        // 初始值为0 表示未开始
+        room.currentPlayer = 0;
 
         //创建5个AI玩家和1个人类玩家，先全部设置为统一样子：平民、AI、未出局
         for (let i = 0; i < 6; i++) {
@@ -35,8 +37,8 @@ export class RoomManager {
             player.isAi = true;
             player.dead = false;
             player.word = words[0];
-            player.desc = [];
-            player.speak = [];
+            // player.desc = [];
+            // player.speak = [];
             room.players.push(player);
         }
         // 随机决定人类玩家的编号
@@ -56,6 +58,13 @@ export class RoomManager {
         room.humanPlayer = humanNumber;
 
         return room;
+
+    }
+
+    nextRound (room:RoomVO)
+    {
+        room.round++;
+        room.currentPlayer = 1;
 
     }
 }

@@ -1,7 +1,13 @@
-import {PROMPT_GAME_RULES, PROMPT_Commoner, PROMPT_UnderCover, PROMPT_ZhuChiRen} from "../constants/prompts";
+import {
+    PROMPT_GAME_RULES,
+    PROMPT_Commoner,
+    PROMPT_UnderCover,
+    PROMPT_ZhuChiRen,
+    PROMPT_DescribeYourWord
+} from "../constants/prompts";
 import axios from 'axios';
 import {RoomVO} from "../vo/RoomVO";
-import {Identity} from "../vo/PlayerVO";
+import PlayerVO, {Identity} from "../vo/PlayerVO";
 import {AiPlayerNames} from "../constants";
 
 // 定义请求的 URL
@@ -56,16 +62,26 @@ export class AiManager {
     }
 
     // 让玩家发言描述自己的词
-    async agentDescribeWord(room:RoomVO,round : number,currentPlayer:number) {
-        room.round = round;
-        room.currentPlayer = currentPlayer;
-        let player = room.players[currentPlayer];
-
-        let messages = [
-            {role: Roles.system, content: PROMPT_GAME_RULES},
-            {role: Roles.system, content: PROMPT_ZhuChiRen},
-        ]
+    async agentDescribeWord(player: PlayerVO,round:number,order :number) {
+        // 断言 player.messages.length>0
+        if (player.messages.length == 0) {
+            throw new Error("AiManager/agentDescribeWord player.messages.length == 0");
+        }
+        // 构造消息
+        let content = PROMPT_DescribeYourWord.replace('【round】',round.toString());
+        content=content.replace('【order】',order.toString());
+        let messages = player.messages.concat([
+            {role: Roles.system, content: content},
+        ]);
+        const respContent = await this.llmRequest(messages);
+        return respContent;
     }
+
+    //维护messages，追加一条ai发言
+    appendAiMessage(player: PlayerVO,content:string,toPlayer:PlayerVO){
+        toPlayer.messages.push({role: Roles.assistant, content: player.name+":"+content});
+    }
+
 
 
     // 生成词语，一个平民词语，一个卧底词语
@@ -74,17 +90,9 @@ export class AiManager {
             {role: Roles.system, content: PROMPT_GAME_RULES},
             {role: Roles.system, content: PROMPT_ZhuChiRen},
         ]
-        const respData = await this.llmRequest(messages);
-        if (respData) {
-            console.log("AiManager/AiManager/createWord",respData);
-            let content = respData.choices[0].message.content;
-            // 剔除think部分，只要think之后的内容
-            const thinkIndex = content.indexOf('</think>');
-            if(thinkIndex !== -1) {
-                content = respData.choices[0].message.content.substring(thinkIndex + '</think>'.length);
-            }
-            // 剔除\n
-            content = content.replace(/\n/g, '');
+        const content = await this.llmRequest(messages);
+        if (content) {
+            console.log("AiManager/AiManager/createWord",content);
             const words = content.split(',');
             return words;
         }
@@ -98,7 +106,7 @@ export class AiManager {
      * 调用大模型
      * @param messages 消息
      */
-    llmRequest(messages: Message[],):Promise<PredictionResponse> {
+    llmRequest(messages: Message[],):Promise<string> {
         return new Promise((resolve, reject) => {
 
             // 定义请求的 body
@@ -109,13 +117,28 @@ export class AiManager {
                 max_tokens: -1,
                 stream: false,
             };
+            console.log("AiManager/AiManager/llmRequest",           messages );
 
             // 发起 POST 请求
             axios.post(url, data, {headers})
                 .then(response => {
                     // 请求成功，打印响应数据
-                    console.log('Response:', response.data as PredictionResponse);
-                    resolve(response.data as PredictionResponse);
+                    // console.log('Response:', response.data as PredictionResponse);
+                    const respData = response.data as PredictionResponse;
+                    if (respData) {
+                        // console.log("AiManager/AiManager/llmRequest",respData);
+                        let content = respData.choices[0].message.content;
+                        // 剔除think部分，只要think之后的内容
+                        const thinkIndex = content.indexOf('</think>');
+                        if(thinkIndex !== -1) {
+                            content = respData.choices[0].message.content.substring(thinkIndex + '</think>'.length);
+                        }
+                        // 剔除\n
+                        content = content.replace(/\n/g, '');
+                        console.log("AiManager/AiManager/llmRequest->Resp:",content                        );
+                        resolve(content);
+                    }
+
                 })
                 .catch(error => {
                     // 请求失败，打印错误信息
