@@ -1,6 +1,10 @@
+import {Message, Roles} from "../manager/AiManager";
+
 export default class PlayerVO{
     // 身份 0 平民 1 卧底
     identity: Identity = Identity.commoner;
+    // 玩家名字
+    name: string = "";
     // 房间内的编号 （1～6）
     number: number = 0;
     // 词语
@@ -15,6 +19,8 @@ export default class PlayerVO{
     // 当前是否已被投出局
     dead: boolean = false;
 
+    // 之前的聊天记录
+    messages: Message[] = [];
 
 }
 export enum Identity{

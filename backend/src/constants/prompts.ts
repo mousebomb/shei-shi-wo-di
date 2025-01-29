@@ -17,5 +17,5 @@ function readTextFile(filePath: string): string {
 // 导出为常量
 export const PROMPT_GAME_RULES = readTextFile(path.join(__dirname, 'GAME_RULE.txt'));
 export const PROMPT_ZhuChiRen = readTextFile(path.join(__dirname, 'ZhuChiRen.md'));
-export const PROMPT_WoDi = readTextFile(path.join(__dirname, 'WoDi.md'));
-export const PROMPT_PingMin = readTextFile(path.join(__dirname, 'PingMin.md'));
+export const PROMPT_UnderCover = readTextFile(path.join(__dirname, 'WoDi.md'));
+export const PROMPT_Commoner = readTextFile(path.join(__dirname, 'PingMin.md'));

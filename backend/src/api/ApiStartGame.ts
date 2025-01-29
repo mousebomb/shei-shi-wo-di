@@ -10,12 +10,11 @@ export default async function (call: ApiCall<ReqStartGame, ResStartGame>) {
      */
     const userId = await call.getSession("userId");
 
-    // 创建房间
-    const room :RoomVO = RoomManager.getInstance().createRoom(userId);
     // 调用大模型生成词语
     const fetchWords = await AiManager.getInstance().createWord();
     call.logger.log("fetchWords: ",fetchWords);
-
-    call.succ({
-    });
+    // 创建房间
+    const room :RoomVO = RoomManager.getInstance().createRoom(userId,fetchWords);
+    await call.setSession("room",room);
+    call.succ({});
 }

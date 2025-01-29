@@ -1,5 +1,8 @@
-import {PROMPT_GAME_RULES, PROMPT_ZhuChiRen} from "../constants/prompts";
+import {PROMPT_GAME_RULES, PROMPT_Commoner, PROMPT_UnderCover, PROMPT_ZhuChiRen} from "../constants/prompts";
 import axios from 'axios';
+import {RoomVO} from "../vo/RoomVO";
+import {Identity} from "../vo/PlayerVO";
+import {AiPlayerNames} from "../constants";
 
 // 定义请求的 URL
 const url = 'http://192.168.50.8:1234/api/v0/chat/completions';
@@ -23,8 +26,45 @@ export class AiManager {
         return AiManager.instance;
     }
 
-    createRobot() {
+    // 开始游戏时，智能体的初始化
+    async agentInit (room:RoomVO,currentPlayer : number){
+        const player = room.players[currentPlayer-1];
+        player.messages = [
+            {role: Roles.system, content: PROMPT_GAME_RULES},
+        ];
+        //替换角色描述
+        let content="";
+        if ( player.identity == Identity.commoner)
+        {
+            content=PROMPT_Commoner;
+        }else if (player.identity == Identity.undercover)
+        {
+            content=PROMPT_UnderCover;
+        }
+        content=content.replace('【名字】',player.name);
+        content=content.replace('【词】',player.word);
+        //其他人的名字
+        let othersNames = "";
+        for (let i = 0; i < room.players.length; i++) {
+            if (i !== currentPlayer-1) {
+                othersNames += room.players[i].name + ',';
+            }
+        }
+        content=content.replace('【其他人的名字】',othersNames.substring(0, othersNames.length - 1));
+        player.messages.push({role: Roles.system, content: content});
 
+    }
+
+    // 让玩家发言描述自己的词
+    async agentDescribeWord(room:RoomVO,round : number,currentPlayer:number) {
+        room.round = round;
+        room.currentPlayer = currentPlayer;
+        let player = room.players[currentPlayer];
+
+        let messages = [
+            {role: Roles.system, content: PROMPT_GAME_RULES},
+            {role: Roles.system, content: PROMPT_ZhuChiRen},
+        ]
     }
 
 
@@ -48,10 +88,17 @@ export class AiManager {
             const words = content.split(',');
             return words;
         }
-        return [];
+        throw new Error("AiManager/AiManager/createWord failed");
     }
 
-    llmRequest(messages: { role: Roles, content: string }[],):Promise<PredictionResponse> {
+    /**************** 调用大模型 ******************/
+    //region 调用大模型
+
+    /**
+     * 调用大模型
+     * @param messages 消息
+     */
+    llmRequest(messages: Message[],):Promise<PredictionResponse> {
         return new Promise((resolve, reject) => {
 
             // 定义请求的 body
@@ -92,6 +139,9 @@ export class AiManager {
         })
     }
 
+    //endregion
+
+
 }
 
 export interface PredictionResponse{
@@ -114,6 +164,10 @@ export interface PredictionResponse{
     };
 }
 
+export interface Message {
+    role: Roles;
+    content: string;
+}
 export enum Roles {
     system = 'system',
     user = 'user',
