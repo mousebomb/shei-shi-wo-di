@@ -47,7 +47,7 @@ export class AiManager {
             content=PROMPT_UnderCover;
         }
         content=content.replace('【名字】',player.name);
-        content=content.replace('【词】',player.word);
+        content=content.replace(/【词】/g,player.word);
         //其他人的名字
         let othersNames = "";
         for (let i = 0; i < room.players.length; i++) {
@@ -93,7 +93,7 @@ export class AiManager {
     async createWord(): Promise<string[]> {
         let messages = [
             {role: Roles.system, content: PROMPT_ZhuChiRen},
-            {role: Roles.system, content: PROMPT_GAME_RULES},
+            // {role: Roles.system, content: PROMPT_GAME_RULES},
         ]
         const content = await this.llmRequest(messages);
         if (content) {

@@ -13,6 +13,11 @@ export default async function (call: ApiCall<ReqStartGame, ResStartGame>) {
     // 调用大模型生成词语
     const fetchWords = await AiManager.getInstance().createWord();
     call.logger.log("fetchWords: ",fetchWords);
+    if ( fetchWords.length!=2)
+    {
+        return call.error("AiManager/createWord failed");
+        // throw new Error("AiManager/createWord failed");
+    }
     // 创建房间
     const room :RoomVO = RoomManager.getInstance().createRoom(userId,fetchWords);
     // 初始化智能体的最初prompt
