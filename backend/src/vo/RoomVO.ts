@@ -15,10 +15,20 @@ export class RoomVO{
 
     //  平民词语、卧底词语
     words:string[];
+
+
     // 游戏的当前轮次 (1开始)
     round:number;
+    // 当前轮内的流程 进行到哪里了 0 描述 1 投票
+    currentRoundStep:number;
     // 游戏的当前轮次内轮到的玩家序号 (1开始)
     currentPlayer:number;
+    //当前轮次内轮到的玩家是否正在输入
+    currentPlayerInputing:boolean;
 
 
+}
+export enum RoomRoundStep{
+    describe,
+    vote
 }

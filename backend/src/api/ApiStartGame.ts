@@ -4,12 +4,14 @@ import {RoomManager} from "../manager/RoomManager";
 import {RoomVO} from "../vo/RoomVO";
 import {AiManager} from "../manager/AiManager";
 import {server} from "../index";
+import GameManager from "../manager/GameManager";
 
 export default async function (call: ApiCall<ReqStartGame, ResStartGame>) {
     /*
     开始游戏，创建房间，拉入5个AI玩家，记录信息
      */
     const userId = await call.getSession("userId");
+    await call.succ({});
 
     // 调用大模型生成词语
     const fetchWords = await AiManager.getInstance().createWord();
@@ -26,92 +28,12 @@ export default async function (call: ApiCall<ReqStartGame, ResStartGame>) {
         await AiManager.getInstance().agentInit(room,i+1);
     }
     await call.setSession("room",room);
-    await call.succ({});
+    await call.conn.sendMsg("GameStarted",{
+        word : room.players[room.humanPlayer-1].word
+    })
     // 开始游戏一轮
+    await GameManager.getInstance().gameNext(room,call.conn);
 
-
-    RoomManager.getInstance().nextRound(room);
-    call.logger.log("ApiStartGame/default/描述环节");
-    // 开始 按序号描述，直到玩家时 返回并等待玩家输入
-    server.broadcastMsg("Chat",{
-        content:
-            "第"+room.round+"轮 【描述阶段】，开始。"
-       ,
-        time:new Date(),
-    });
-    for (let i=0;i<room.players.length;i++){
-        if ( !room.players[i].isAi )
-        {
-            // 玩家，则等待玩家输入
-            // todo
-            // console.log("ApiStartGame/default 需要玩家输入"           );
-        }
-        if (!room.players[i].dead){
-            //AI 玩家 则开始描述
-            console.log("ApiStartGame/default "+ room.players[i].getFullName()+"描述请求中");
-            const describeContent = await AiManager.getInstance().agentDescribeWord(room.players[i],room.round,i+1);
-            console.log("ApiStartGame/default "+ room.players[i].getFullName()+"描述："+describeContent);
-            // 广播同步给所有player的历史消息
-            for (let j =0;j<room.players.length;j++)
-            {
-                //跳过自己
-                if(i==j) continue;
-                if ( room.players[j].isAi )
-                {
-                    AiManager.getInstance().appendAiMessage(room.round,i+1,room.players[i],describeContent,room.players[j]);
-                }else{
-                    // 广播给玩家
-                    server.broadcastMsg("Chat",{
-                        content: room.players[i].getFullName()+"描述道:\""+describeContent +"\"。"
-                        ,
-                        time:new Date(),
-                    })
-                }
-            }
-
-        }
-    }
-    call.logger.log("ApiStartGame/default/描述完毕");
-
-    // 描述完毕后，开始投票
-    server.broadcastMsg("Chat",{
-        content:
-            "第"+room.round+"轮 【投票阶段】，开始。"
-        ,
-        time:new Date(),
-    });
-    for (let i=0;i<room.players.length;i++){
-        if (!room.players[i].isAi )
-        {
-            // 玩家，则等待玩家输入
-            // todo
-            // console.log("ApiStartGame/default 需要玩家输入"           );
-        }
-        if (!room.players[i].dead){
-            //AI 玩家 则开始描述
-            console.log("ApiStartGame/default 玩家"+(i+1) + room.players[i].name+"投票请求中");
-            const voteContent = await AiManager.getInstance().agentVote(room.players[i],room);
-            console.log("ApiStartGame/default 玩家"+(i+1) + room.players[i].name+"投票："+voteContent.voteToPlayer);
-
-            // 广播同步给所有player的历史消息
-            for (let j =0;j<room.players.length;j++)
-            {
-                //跳过自己
-                if(i==j) continue;
-                if ( room.players[j].isAi)
-                {
-                    AiManager.getInstance().appendAiVoteMessage(room.round,room.players[i],voteContent,room.players[j]);
-                }else{
-                    // 广播给玩家
-                    server.broadcastMsg("Chat",{
-                        content: room.players[i].getFullName()+"投票给玩家"+room.players[voteContent.voteToPlayer-1].getFullName() +" 理由："+voteContent.reason +"。",
-                        time:new Date(),
-                    });
-                }
-            }
-        }
-    }
-    call.logger.log("ApiStartGame/default/投票完毕");
 
 
 }
