@@ -1,14 +1,13 @@
 import {
-    PROMPT_GAME_RULES,
     PROMPT_Commoner,
-    PROMPT_UnderCover,
-    PROMPT_ZhuChiRen,
-    PROMPT_DescribeYourWord, PROMPT_Vote
+    PROMPT_DescribeYourWord,
+    PROMPT_GAME_RULES,
+    PROMPT_UnderCover, PROMPT_Vote, PROMPT_Vote_UnderCover,
+    PROMPT_ZhuChiRen
 } from "../constants/prompts";
 import axios from 'axios';
 import {RoomVO} from "../vo/RoomVO";
 import PlayerVO, {Identity} from "../vo/PlayerVO";
-import {AiPlayerNames} from "../constants";
 
 // 定义请求的 URL
 const url = 'http://192.168.50.8:1234/api/v0/chat/completions';
@@ -61,6 +60,7 @@ export class AiManager {
 
 
     }
+
     /**************** 描述阶段 ******************/
     //region 描述阶段
 
@@ -74,16 +74,16 @@ export class AiManager {
         let content = PROMPT_DescribeYourWord.replace('【round】',round.toString());
         content=content.replace('【order】',order.toString());
         content=content.replace(/【词】/g,player.word);
-        let messages = player.messages.concat([
-            {role: Roles.system, content: content},
-        ]);
-        let respContent = await this.llmRequest(messages);
+        player.messages.push ({role: Roles.system, content: content});
+        let respContent = await this.llmRequest(player.messages);
         // AI 总是时不时犯规，所以要做一次处理，如果暴露了自己的词，强行替换
-        if (respContent.indexOf(player.word) !== -1) {
+        if (respContent.content.indexOf(player.word) !== -1) {
             // 全局替换
-            respContent = respContent.replace(new RegExp(player.word, 'g'),'我的这个词');
+            respContent.content = respContent.content.replace(new RegExp(player.word, 'g'),'我的这个词');
         }
-        return respContent;
+        // AI自己的发言记录到自己的messages中
+        player.messages.push({role: Roles.assistant, content:respContent.content});
+        return respContent.content;
     }
 
     //维护messages，追加一条ai发言
@@ -99,20 +99,23 @@ export class AiManager {
     // 让玩家投票
     async agentVote(player: PlayerVO, room:RoomVO) {
         // 构造消息
-        let content = PROMPT_Vote;
+        let content = player.identity== Identity.undercover?PROMPT_Vote_UnderCover:PROMPT_Vote;
         content=content.replace('【round】',room.round.toString());
         content = content.replace('【词】',player.word);
-        let messages = player.messages.concat([
-            {role: Roles.system, content: content},
-        ]);
-        let respContent = await this.llmRequest(messages);
+        player.messages.push({role: Roles.system, content: content});
+        let respContent = await this.llmRequest(player.messages);
         // AI 总是时不时犯规，所以要做一次处理，如果暴露了自己的词，强行替换
-        if (respContent.indexOf(player.word) !== -1) {
+        if (respContent.content.indexOf(player.word) !== -1) {
             // 全局替换
-            respContent = respContent.replace(new RegExp(player.word, 'g'),'我的这个词');
+            respContent.content = respContent.content.replace(new RegExp(player.word, 'g'),'我的这个词');
         }
+        // AI自己的发言记录到自己的messages中
+        player.messages.push({role: Roles.assistant, content:respContent.raw});
+        // 返回的内容可能是```json {jsonContent}``` 也可能是{jsonContent}，需要去掉可能存在的```json ```
+        respContent.content = respContent.content.replace(/```json/g, '');
+        respContent.content = respContent.content.replace(/```/g, '');
         //json解析
-        let jsonContent = JSON.parse(respContent);
+        let jsonContent = JSON.parse(respContent.content);
         return jsonContent as {voteToPlayer:number,reason: string};
     }
     //维护messages，追加一条ai投票
@@ -131,10 +134,9 @@ export class AiManager {
             {role: Roles.system, content: PROMPT_ZhuChiRen},
             // {role: Roles.system, content: PROMPT_GAME_RULES},
         ]
-        const content = await this.llmRequest(messages);
-        if (content) {
-            console.log("AiManager/AiManager/createWord",content);
-            const words = content.split(',');
+        const resp = await this.llmRequest(messages);
+        if (resp.content) {
+            const words = resp.content.split(',');
             return words;
         }
         throw new Error("AiManager/AiManager/createWord failed");
@@ -148,8 +150,9 @@ export class AiManager {
     /**
      * 调用大模型
      * @param messages 消息
+     * todo : raw 把自己的think包含加入messages
      */
-    llmRequest(messages: Message[],):Promise<string> {
+    llmRequest(messages: Message[],):Promise<{raw:string,content:string}> {
         return new Promise((resolve, reject) => {
 
             // 定义请求的 body
@@ -169,7 +172,8 @@ export class AiManager {
                     // console.log('Response:', response.data as PredictionResponse);
                     const respData = response.data as PredictionResponse;
                     if (respData) {
-                        let content = respData.choices[0].message.content;
+                        const raw = respData.choices[0].message.content;
+                        let content = raw;
                         console.log("AiManager/AiManager/llmRequest->Resp Raw:",content);
                         // 剔除think部分，只要think之后的内容
                         const thinkIndex = content.indexOf('</think>');
@@ -179,7 +183,7 @@ export class AiManager {
                         // 剔除\n
                         content = content.replace(/\n/g, '');
                         // console.log("AiManager/AiManager/llmRequest->Resp:",content                        );
-                        resolve(content);
+                        resolve({raw,content});
                     }
 
                 })

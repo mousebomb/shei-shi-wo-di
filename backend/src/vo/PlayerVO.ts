@@ -24,7 +24,7 @@ export default class PlayerVO{
 
     // 全名
     getFullName(): string {
-        return "玩家"+this.number + "-" + this.name;
+        return "玩家"+this.number + "(" + this.name+")";
     }
 
 }
