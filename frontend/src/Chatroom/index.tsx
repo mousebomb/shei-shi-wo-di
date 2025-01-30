@@ -8,6 +8,9 @@ export const Chatroom = (props: { title: string }) => {
     const [list, setList] = useState([] as MsgChat[]);
     const [client] = useState(getClient());
 
+    async function startGame(){
+        client.callApi("StartGame",{});
+    }
     // Send input message
     async function send() {
         let ret = await client.callApi('Send', {
@@ -61,10 +64,14 @@ export const Chatroom = (props: { title: string }) => {
         </ul>
         <div className="send">
             <input placeholder="Say something..." value={input}
-                onChange={e => { setInput(e.target.value) }}
-                onKeyPress={e => e.key === 'Enter' && send()}
+                   onChange={e => {
+                       setInput(e.target.value)
+                   }}
+                   onKeyPress={e => e.key === 'Enter' && send()}
             />
             <button onClick={send}>Send</button>
+            <button onClick={startGame}>Start</button>
+
         </div>
     </div>
 }

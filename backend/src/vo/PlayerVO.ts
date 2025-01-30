@@ -22,6 +22,11 @@ export default class PlayerVO{
     // 之前的聊天记录
     messages: Message[] = [];
 
+    // 全名
+    getFullName(): string {
+        return "玩家"+this.number + "-" + this.name;
+    }
+
 }
 export enum Identity{
     commoner,

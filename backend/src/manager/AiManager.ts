@@ -3,7 +3,7 @@ import {
     PROMPT_Commoner,
     PROMPT_UnderCover,
     PROMPT_ZhuChiRen,
-    PROMPT_DescribeYourWord
+    PROMPT_DescribeYourWord, PROMPT_Vote
 } from "../constants/prompts";
 import axios from 'axios';
 import {RoomVO} from "../vo/RoomVO";
@@ -46,13 +46,13 @@ export class AiManager {
         {
             content=PROMPT_UnderCover;
         }
-        content=content.replace('【名字】',player.name);
+        content=content.replace('【名字】',player.getFullName());
         content=content.replace(/【词】/g,player.word);
         //其他人的名字
         let othersNames = "";
         for (let i = 0; i < room.players.length; i++) {
             if (i !== currentPlayer-1) {
-                othersNames += room.players[i].name + ',';
+                othersNames += room.players[i].getFullName() + ',';
             }
         }
         content=content.replace('【其他人的名字】',othersNames.substring(0, othersNames.length - 1));
@@ -61,6 +61,8 @@ export class AiManager {
 
 
     }
+    /**************** 描述阶段 ******************/
+    //region 描述阶段
 
     // 让玩家发言描述自己的词
     async agentDescribeWord(player: PlayerVO,round:number,order :number) {
@@ -75,19 +77,53 @@ export class AiManager {
         let messages = player.messages.concat([
             {role: Roles.system, content: content},
         ]);
-        const respContent = await this.llmRequest(messages);
+        let respContent = await this.llmRequest(messages);
+        // AI 总是时不时犯规，所以要做一次处理，如果暴露了自己的词，强行替换
+        if (respContent.indexOf(player.word) !== -1) {
+            // 全局替换
+            respContent = respContent.replace(new RegExp(player.word, 'g'),'我的这个词');
+        }
         return respContent;
     }
 
     //维护messages，追加一条ai发言
     appendAiMessage(round:number,order:number,player: PlayerVO,content:string,toPlayer:PlayerVO){
         toPlayer.messages.push({role: Roles.system, content:
-                "第"+round+"轮 【描述阶段】，第"+order+"位发言者是玩家"+player.number+" "+
-                player.name+"。他的描述是:\""+content +"\"。"
+                "第"+round+"轮 【描述阶段】，玩家"+player.getFullName()+"描述道：\""+content +"\"。"
+        });
+    }
+    //endregion
+
+    /**************** 投票阶段 ******************/
+    //region 投票阶段
+    // 让玩家投票
+    async agentVote(player: PlayerVO, room:RoomVO) {
+        // 构造消息
+        let content = PROMPT_Vote;
+        content=content.replace('【round】',room.round.toString());
+        content = content.replace('【词】',player.word);
+        let messages = player.messages.concat([
+            {role: Roles.system, content: content},
+        ]);
+        let respContent = await this.llmRequest(messages);
+        // AI 总是时不时犯规，所以要做一次处理，如果暴露了自己的词，强行替换
+        if (respContent.indexOf(player.word) !== -1) {
+            // 全局替换
+            respContent = respContent.replace(new RegExp(player.word, 'g'),'我的这个词');
+        }
+        //json解析
+        let jsonContent = JSON.parse(respContent);
+        return jsonContent as {voteToPlayer:number,reason: string};
+    }
+    //维护messages，追加一条ai投票
+    appendAiVoteMessage(round:number,player: PlayerVO,content:{voteToPlayer:number,reason: string},toPlayer:PlayerVO){
+        toPlayer.messages.push({role: Roles.system, content:
+                "第"+round+"轮 【投票阶段】，玩家"+player.getFullName()+"投给玩家"+content.voteToPlayer+"，理由:\""+content.reason +"\"。"
         });
     }
 
-
+    /**************** 生成词语 ******************/
+    //region 生成词语
 
     // 生成词语，一个平民词语，一个卧底词语
     async createWord(): Promise<string[]> {
@@ -103,6 +139,8 @@ export class AiManager {
         }
         throw new Error("AiManager/AiManager/createWord failed");
     }
+    //endregion
+
 
     /**************** 调用大模型 ******************/
     //region 调用大模型
