@@ -36,7 +36,6 @@ export class AiManager {
     async agentInit (room:RoomVO,currentPlayer : number){
         const player = room.players[currentPlayer-1];
         player.messages = [
-            {role: Roles.system, content: PROMPT_GAME_RULES},
         ];
         //替换角色描述
         let content="";
@@ -58,6 +57,8 @@ export class AiManager {
         }
         content=content.replace('【其他人的名字】',othersNames.substring(0, othersNames.length - 1));
         player.messages.push({role: Roles.system, content: content});
+        player.messages.push({role: Roles.system, content: PROMPT_GAME_RULES});
+
 
     }
 
@@ -70,6 +71,7 @@ export class AiManager {
         // 构造消息
         let content = PROMPT_DescribeYourWord.replace('【round】',round.toString());
         content=content.replace('【order】',order.toString());
+        content=content.replace(/【词】/g,player.word);
         let messages = player.messages.concat([
             {role: Roles.system, content: content},
         ]);
@@ -78,8 +80,11 @@ export class AiManager {
     }
 
     //维护messages，追加一条ai发言
-    appendAiMessage(player: PlayerVO,content:string,toPlayer:PlayerVO){
-        toPlayer.messages.push({role: Roles.assistant, content: player.name+":"+content});
+    appendAiMessage(round:number,order:number,player: PlayerVO,content:string,toPlayer:PlayerVO){
+        toPlayer.messages.push({role: Roles.system, content:
+                "第"+round+"轮 【描述阶段】，第"+order+"位发言者是玩家"+player.number+" "+
+                player.name+"。他的描述是:\""+content +"\"。"
+        });
     }
 
 
@@ -87,8 +92,8 @@ export class AiManager {
     // 生成词语，一个平民词语，一个卧底词语
     async createWord(): Promise<string[]> {
         let messages = [
-            {role: Roles.system, content: PROMPT_GAME_RULES},
             {role: Roles.system, content: PROMPT_ZhuChiRen},
+            {role: Roles.system, content: PROMPT_GAME_RULES},
         ]
         const content = await this.llmRequest(messages);
         if (content) {
@@ -126,8 +131,8 @@ export class AiManager {
                     // console.log('Response:', response.data as PredictionResponse);
                     const respData = response.data as PredictionResponse;
                     if (respData) {
-                        // console.log("AiManager/AiManager/llmRequest",respData);
                         let content = respData.choices[0].message.content;
+                        console.log("AiManager/AiManager/llmRequest->Resp Raw:",content);
                         // 剔除think部分，只要think之后的内容
                         const thinkIndex = content.indexOf('</think>');
                         if(thinkIndex !== -1) {
@@ -135,7 +140,7 @@ export class AiManager {
                         }
                         // 剔除\n
                         content = content.replace(/\n/g, '');
-                        console.log("AiManager/AiManager/llmRequest->Resp:",content                        );
+                        // console.log("AiManager/AiManager/llmRequest->Resp:",content                        );
                         resolve(content);
                     }
 

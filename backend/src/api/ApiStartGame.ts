@@ -30,15 +30,18 @@ console.log("ApiStartGame/default/");
         if ( !room.players[i].isAi )
         {
             // 玩家，则等待玩家输入
-            console.log("ApiStartGame/default 需要玩家输入"           );
+            // todo
+            // console.log("ApiStartGame/default 需要玩家输入"           );
         }
         if (!room.players[i].dead){
             //AI 玩家 则开始描述
+            console.log("ApiStartGame/default 玩家"+(i+1) + room.players[i].name+"描述请求中");
             const describeContent = await AiManager.getInstance().agentDescribeWord(room.players[i],room.round,i+1);
+            console.log("ApiStartGame/default 玩家"+(i+1) + room.players[i].name+"描述："+describeContent);
             // 广播同步给所有player的历史消息
             for (let j =0;j<room.players.length;j++)
             {
-                AiManager.getInstance().appendAiMessage(room.players[i],describeContent,room.players[j]);
+                AiManager.getInstance().appendAiMessage(room.round,i+1,room.players[i],describeContent,room.players[j]);
             }
         }
     }
