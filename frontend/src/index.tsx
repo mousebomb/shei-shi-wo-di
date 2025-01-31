@@ -3,11 +3,10 @@ import { Chatroom } from './Chatroom';
 import './index.less';
 
 const App = () => <div className='App'>
-    <h1>TSRPC Chatroom</h1>
+    <h1>谁是卧底</h1>
 
     <div>
-        <Chatroom title='Client #1' />
-        <Chatroom title='Client #2' />
+        <Chatroom />
     </div>
 </div>
 

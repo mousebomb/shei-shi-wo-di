@@ -84,7 +84,7 @@ export default class GameManager {
                     room.currentRoundStep = RoomRoundStep.describe;
                     room.currentPlayer = 1;
                     // 开始 按序号描述
-                    server.broadcastMsg("Chat",{
+                    await conn.sendMsg("Chat",{
                         content:
                             "第"+room.round+"轮 【描述阶段】，开始。"
                         ,
@@ -136,7 +136,7 @@ export default class GameManager {
                     AiManager.getInstance().appendAiMessage(room.round,i+1,player,describeContent,room.players[j]);
                 }else{
                     // 广播给玩家
-                    server.broadcastMsg("Chat",{
+                    await conn.sendMsg("Chat",{
                         content: player.getFullName()+"描述道:\""+describeContent +"\"。"
                         ,
                         time:new Date(),
@@ -178,7 +178,7 @@ export default class GameManager {
                     AiManager.getInstance().appendAiVoteMessage(room.round,room.players[i],voteContent,room.players[j]);
                 }else{
                     // 广播给玩家
-                    server.broadcastMsg("Chat",{
+                    await conn.sendMsg("Chat",{
                         content: room.players[i].getFullName()+"投票给玩家"+room.players[voteContent.voteToPlayer-1].getFullName() +" 理由："+voteContent.reason +"。",
                         time:new Date(),
                     })
