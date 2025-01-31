@@ -5,6 +5,7 @@ import {RoomVO} from "../vo/RoomVO";
 import {AiManager} from "../manager/AiManager";
 import {server} from "../index";
 import GameManager from "../manager/GameManager";
+import {PROMPT_WORDS} from "../constants/prompts";
 
 export default async function (call: ApiCall<ReqStartGame, ResStartGame>) {
     /*
@@ -13,8 +14,11 @@ export default async function (call: ApiCall<ReqStartGame, ResStartGame>) {
     const userId = await call.getSession("userId");
     await call.succ({});
 
-    // 调用大模型生成词语
-    const fetchWords = await AiManager.getInstance().createWord();
+    // // 调用大模型生成词语
+    // const fetchWords = await AiManager.getInstance().createWord();
+    // 用嵌入的词语 随机取一组
+    const rand = Math.random()*PROMPT_WORDS.length;
+    const fetchWords = PROMPT_WORDS[Math.floor(rand)];
     call.logger.log("fetchWords: ",fetchWords);
     if ( fetchWords.length!=2)
     {

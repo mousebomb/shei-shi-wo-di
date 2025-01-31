@@ -61,7 +61,6 @@ export class AiManager {
 
     }
 
-    /**************** 描述阶段 ******************/
     //region 描述阶段
 
     // 让玩家发言描述自己的词
@@ -87,14 +86,13 @@ export class AiManager {
     }
 
     //维护messages，追加一条ai发言
-    appendAiMessage(round:number,order:number,player: PlayerVO,content:string,toPlayer:PlayerVO){
+    appendAiDescribeMessage(round:number, order:number, player: PlayerVO, content:string, toPlayer:PlayerVO){
         toPlayer.messages.push({role: Roles.system, content:
                 "第"+round+"轮 【描述阶段】，玩家"+player.getFullName()+"描述道：\""+content +"\"。"
         });
     }
     //endregion
 
-    /**************** 投票阶段 ******************/
     //region 投票阶段
     // 让玩家投票
     async agentVote(player: PlayerVO, room:RoomVO) {
@@ -109,11 +107,11 @@ export class AiManager {
             // 全局替换
             respContent.content = respContent.content.replace(new RegExp(player.word, 'g'),'我的这个词');
         }
-        // AI自己的发言记录到自己的messages中
-        player.messages.push({role: Roles.assistant, content:respContent.raw});
         // 返回的内容可能是```json {jsonContent}``` 也可能是{jsonContent}，需要去掉可能存在的```json ```
         respContent.content = respContent.content.replace(/```json/g, '');
         respContent.content = respContent.content.replace(/```/g, '');
+        // AI自己的发言记录到自己的messages中
+        player.messages.push({role: Roles.assistant, content:respContent.content});
         //json解析 ; AI有时候不稳定，返回的格式不是json，需要try catch，如果返回不合法，就重新生成
         try {
             let jsonContent = JSON.parse(respContent.content);
@@ -132,6 +130,12 @@ export class AiManager {
                 "第"+round+"轮 【投票阶段】，玩家"+player.getFullName()+"投给玩家"+content.voteToPlayer+"，理由:\""+content.reason +"\"。"
         });
     }
+    //endregion
+    //region 通用写入信息
+    appendAiMessage(toPlayer: PlayerVO,content : string) {
+        toPlayer.messages.push({role: Roles.system, content});
+    }
+    //endregion
 
     /**************** 生成词语 ******************/
     //region 生成词语

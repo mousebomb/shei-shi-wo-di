@@ -111,4 +111,47 @@ export class RoomManager {
         }
         return aliveCount <= 2;
     }
+
+    // 盘点当前存活卧底数量
+    calcUndercoverAlive(room:RoomVO):number
+    {
+        let aliveCount = 0;
+        for (let i = 0; i < room.players.length; i++) {
+            if (!room.players[i].dead && room.players[i].identity == Identity.undercover) {
+                aliveCount++;
+            }
+        }
+        return aliveCount;
+    }
+
+    // 盘点当前存活平民数量
+    calcCommonerAlive(room:RoomVO):number
+    {
+        let aliveCount = 0;
+        for (let i = 0; i < room.players.length; i++) {
+            if (!room.players[i].dead && room.players[i].identity == Identity.commoner) {
+                aliveCount++;
+            }
+        }
+        return aliveCount;
+    }
+
+
+    // 广播消息
+    broadcast(room : RoomVO,skipPlayerNumber:number, aiCb : (ai:PlayerVO)=>void, humanCb : (human:PlayerVO)=>void )
+    {
+        for (let i = 0; i < room.players.length; i++) {
+            // 有时候要求跳过AI，传入要跳过的玩家序号
+            if (room.players[i].number == skipPlayerNumber) {
+                continue;
+            }
+            if (!room.players[i].dead) {
+                if (room.players[i].isAi) {
+                    aiCb(room.players[i]);
+                }else {
+                    humanCb(room.players[i]);
+                }
+            }
+        }
+    }
 }
