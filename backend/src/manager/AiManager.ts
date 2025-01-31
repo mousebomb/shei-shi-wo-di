@@ -74,7 +74,7 @@ export class AiManager {
         let content = PROMPT_DescribeYourWord.replace('【round】',round.toString());
         content=content.replace('【order】',order.toString());
         content=content.replace(/【词】/g,player.word);
-        player.messages.push ({role: Roles.system, content: content});
+        player.messages.push ({role: Roles.user, content: content});
         let respContent = await this.llmRequest(player.messages);
         // AI 总是时不时犯规，所以要做一次处理，如果暴露了自己的词，强行替换
         if (respContent.content.indexOf(player.word) !== -1) {
@@ -101,7 +101,7 @@ export class AiManager {
         let content = player.identity== Identity.undercover?PROMPT_Vote_UnderCover:PROMPT_Vote;
         content=content.replace('【round】',room.round.toString());
         content = content.replace('【词】',player.word);
-        player.messages.push({role: Roles.system, content: content});
+        player.messages.push({role: Roles.user, content: content});
         let respContent = await this.llmRequest(player.messages);
         // AI 总是时不时犯规，所以要做一次处理，如果暴露了自己的词，强行替换
         if (respContent.content.indexOf(player.word) !== -1) {
@@ -134,8 +134,20 @@ export class AiManager {
     //endregion
     //region 通用写入信息
     appendAiMessage(toPlayer: PlayerVO,content : string) {
-        toPlayer.messages.push({role: Roles.system, content});
+        // 发生的历史记录为user口吻的描述，所以要判断最后一条消息是否是user，如果不是，就追加一条user的，后续就追加到content里
+        const lastMessage = toPlayer.messages[toPlayer.messages.length-1];
+        if ( lastMessage.role !== Roles.user)
+        {
+            toPlayer.messages.push({role: Roles.user, content});
+        }else{
+            this.appendAiMessagePart(toPlayer,content);
+        }
     }
+    appendAiMessagePart(toPlayer: PlayerVO,content : string) {
+        const lastMessage = toPlayer.messages[toPlayer.messages.length-1];
+        lastMessage.content += "\n"+content;
+    }
+
     //endregion
 
     /**************** 生成词语 ******************/

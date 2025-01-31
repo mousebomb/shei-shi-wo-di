@@ -47,12 +47,7 @@ export default class GameManager {
                     room.currentRoundStep = RoomRoundStep.vote;
                     room.currentPlayer = 1;
                     // 开始 投票
-                    await conn.sendMsg("Chat",{
-                        content:
-                            "第"+room.round+"轮 【投票阶段】，开始。"
-                        ,
-                        time:new Date(),
-                    });
+                    this.broadcastToRoom(room, -1, "第"+room.round+"轮 【投票阶段】，开始。", conn);
                     RoomManager.getInstance().beginVote(room);
                 }else{
 
@@ -194,20 +189,20 @@ export default class GameManager {
     private async gamePlayerDescribe(room:RoomVO,currentPlayer:number,conn :BaseConnection<any>):Promise<boolean>{
         const i = currentPlayer-1;
         const player = room.players[i];
+        if ( player.dead )
+        {
+            //玩家 已出局，跳过，直接完成本玩家输入
+            room.currentPlayerInputing = false;
+            room.currentPlayer++;
+            return false;
+        }
         if ( !player.isAi )
         {
-            // 玩家，则等待玩家输入
+            // 人类玩家且没出局，则等待玩家输入
             room.currentPlayerInputing = true;
             // 广播给玩家
             await conn.sendMsg("PlsDescribe",{});
             return true;
-        }
-        if ( player.dead )
-        {
-            //AI玩家 且已出局，跳过，直接完成本玩家输入
-            room.currentPlayerInputing = false;
-            room.currentPlayer++;
-            return false;
         }else{
             //AI玩家 且没出局 则开始描述
             room.currentPlayerInputing = true;
@@ -226,20 +221,20 @@ export default class GameManager {
     private async gamePlayerVote(room:RoomVO,currentPlayer:number,conn :BaseConnection<any>):Promise<boolean>{
         const i = currentPlayer-1;
         const player = room.players[i];
+        if ( player.dead )
+        {
+            //玩家 已出局，跳过，直接完成本玩家输入
+            room.currentPlayerInputing = false;
+            room.currentPlayer++;
+            return false;
+        }
         if ( !player.isAi )
         {
-            // 玩家，则等待玩家输入
+            // 人类玩家，则等待玩家输入
             room.currentPlayerInputing = true;
             // 广播给玩家
             await conn.sendMsg("PlsVote",{});
             return true;
-        }
-        if ( player.dead )
-        {
-            //AI玩家 且已出局，跳过，直接完成本玩家输入
-            room.currentPlayerInputing = false;
-            room.currentPlayer++;
-            return false;
         }else{
             //AI玩家 且没出局 则开始投票
             conn.logger.log("GameManager/default 玩家" + (i + 1) + player.name + "投票请求中");
@@ -249,8 +244,8 @@ export default class GameManager {
             RoomManager.getInstance().vote(room,voteContent.voteToPlayer);
             // 广播同步给所有player的历史消息
             const messageContent = player.getFullName() + "投票给玩家" + room.players[voteContent.voteToPlayer - 1].getFullName() + "，理由:\"" + voteContent.reason + "\"。";
-            // 对玩家，发送msg；对AI，追加aimessage ； 跳过ai自己，因为自己的已经在agentVote中记录到自己的messages中了
-            this.broadcastToRoom(room, player.number, messageContent, conn);
+            // 对玩家，发送msg；对AI，追加aimessage ； 包括AI自己；因为虽然自己的已经在agentVote中记录到自己的messages中了，但记录计票的文案有所不同
+            this.broadcastToRoom(room, -1, messageContent, conn);
             room.currentPlayerInputing = false;
             room.currentPlayer++;
             return false;
