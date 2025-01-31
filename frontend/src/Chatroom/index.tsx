@@ -30,7 +30,7 @@ export const Chatroom = (props: {}) => {
         // Connect at startup
         client.connect().then(v => {
             if (!v.isSucc) {
-                alert('= Client Connect Error =\n' + v.errMsg);
+                Toast.error('= Client Connect Error =\n' + v.errMsg);
             }
         });
 
@@ -55,7 +55,7 @@ export const Chatroom = (props: {}) => {
 
         // When disconnected
         client.flows.postDisconnectFlow.push(v => {
-            alert('Server disconnected');
+            Toast.error('Server disconnected');
             return v;
         })
     }, [client]);

@@ -9,5 +9,5 @@ export default async function (call: ApiCall<ReqSendDescribe, ResSendDescribe>) 
         return call.error("room is null");
     }
     await call.succ({time: new Date()});
-    GameManager.getInstance().gameNext(room, call.conn);
+    await GameManager.getInstance().userInputDescribe(call.req.content,room,call.conn);
 }

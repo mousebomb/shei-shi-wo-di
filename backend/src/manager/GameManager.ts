@@ -23,10 +23,12 @@ export default class GameManager {
      *   会根据当前用户的房间状态做不同的处理
      */
     public async gameNext(room:RoomVO,conn :BaseConnection<any>){
+        console.log("GameManager/GameManager/gameNext 游戏继续进行");
         let canGoNext = true;
         while(canGoNext){
             if ( room.currentPlayerInputing) {
                 // 玩家正在输入，不做处理
+                console.log("GameManager/GameManager/gameNext 玩家正在输入，不做处理");
                 return;
             }
             // 如果尚未开始，则进入第一轮
@@ -36,7 +38,7 @@ export default class GameManager {
                 room.currentRoundStep = RoomRoundStep.describe;
                 room.currentPlayer = 1;
                 // 开始 按序号描述，直到玩家时 返回并等待玩家输入
-                server.broadcastMsg("Chat",{
+                await conn.sendMsg("Chat",{
                     content:
                         "第"+room.round+"轮 【描述阶段】，开始。"
                     ,
@@ -52,12 +54,12 @@ export default class GameManager {
                 if ( describeIsWaiting ) return;
                 if ( room.currentPlayerInputing ) return;
                 // 玩家输入完毕，进入下一个玩家
-                if ( ++room.currentPlayer > room.players.length )
+                if ( room.currentPlayer > room.players.length )
                 {//如果所有玩家都已结束，则进入下一环节
                     room.currentRoundStep = RoomRoundStep.vote;
                     room.currentPlayer = 1;
                     // 开始 投票
-                    server.broadcastMsg("Chat",{
+                    await conn.sendMsg("Chat",{
                         content:
                             "第"+room.round+"轮 【投票阶段】，开始。"
                       ,
@@ -97,6 +99,31 @@ export default class GameManager {
 
     }
 
+    // 人类玩家输入描述
+    public async userInputDescribe(describeContent : string,room:RoomVO,conn :BaseConnection<any>){
+        //同步给所有玩家 AI和人类
+        const player = room.players[room.currentPlayer-1];
+        // 广播同步给所有player的历史消息
+        for (let j =0;j<room.players.length;j++)
+        {
+            // 对玩家，发送msg；对AI，追加aimessage ； 包括自己
+            if ( room.players[j].isAi )
+            {
+                AiManager.getInstance().appendAiMessage(room.round,room.currentPlayer,player,describeContent,room.players[j]);
+            }else{
+                // 广播给玩家
+                await conn.sendMsg("Chat",{
+                    content: player.getFullName()+"描述道:\""+describeContent +"\"。"
+                    ,
+                    time:new Date(),
+                })
+            }
+        }
+        room.currentPlayerInputing = false;
+        room.currentPlayer++;
+        //继续游戏
+        await this.gameNext(room,conn);
+    }
 
     /**
      * 轮到下一个玩家描述 ，返回是否等待玩家输入
@@ -119,6 +146,7 @@ export default class GameManager {
         {
             //AI玩家 且已出局，跳过，直接完成本玩家输入
             room.currentPlayerInputing = false;
+            room.currentPlayer++;
             return false;
         }else{
             //AI玩家 且没出局 则开始描述
@@ -144,6 +172,7 @@ export default class GameManager {
                 }
             }
             room.currentPlayerInputing = false;
+            room.currentPlayer++;
             return false;
         }
     }
