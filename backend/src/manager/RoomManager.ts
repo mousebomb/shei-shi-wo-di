@@ -27,6 +27,8 @@ export class RoomManager {
         room.players = [];
         // 初始值为0 表示未开始
         room.currentPlayer = 0;
+        //
+        room.words = words;
 
         //创建5个AI玩家和1个人类玩家，先全部设置为统一样子：平民、AI、未出局
         for (let i = 0; i < 6; i++) {
@@ -145,13 +147,13 @@ export class RoomManager {
             if (room.players[i].number == skipPlayerNumber) {
                 continue;
             }
-            if (!room.players[i].dead) {
+            // if (!room.players[i].dead) {
                 if (room.players[i].isAi) {
                     aiCb(room.players[i]);
                 }else {
                     humanCb(room.players[i]);
                 }
-            }
+            // }
         }
     }
 }
