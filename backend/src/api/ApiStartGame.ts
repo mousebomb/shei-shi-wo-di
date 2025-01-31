@@ -33,7 +33,8 @@ export default async function (call: ApiCall<ReqStartGame, ResStartGame>) {
     }
     await call.setSession("room",room);
     await call.conn.sendMsg("GameStarted",{
-        word : room.players[room.humanPlayer-1].word
+        word : room.players[room.humanPlayer-1].word,
+        numPlayers : room.players.length,
     })
     // 开始游戏一轮
     await GameManager.getInstance().gameNext(room,call.conn);

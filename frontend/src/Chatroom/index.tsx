@@ -10,6 +10,7 @@ export const Chatroom = (props: {}) => {
     const [client] = useState(getClient());
     const [isGameStarted, setIsGameStarted] = useState(false);
     const [word, setWord] = useState("");
+    const [numPlayers, setNumPlayers] = useState(0);
     const [isWaitingMeVote, setIsWaitingMeVote] = useState(false);
     const [isWaitingMeDescribe, setIsWaitingMeDescribe] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -40,6 +41,7 @@ export const Chatroom = (props: {}) => {
         client.listenMsg('GameStarted', v => {
             setWord(v.word);
             setIsGameStarted(true);
+            setNumPlayers(v.numPlayers);
             Toast.success("游戏开始，你的词是：" + v.word);
         })
         client.listenMsg('PlsVote', v => {
@@ -91,8 +93,8 @@ export const Chatroom = (props: {}) => {
             return;
         }
         //必须是1～6之间的数字
-        if (voteToPlayer < 1 || voteToPlayer > 6) {
-            Toast.error("投票必须是1～6之间的数字");
+        if (voteToPlayer < 1 || voteToPlayer > numPlayers) {
+            Toast.error("投票必须是1～"+numPlayers+"之间的数字");
             return;
         }
         setIsLoading(true);
