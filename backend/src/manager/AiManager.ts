@@ -56,8 +56,7 @@ export class AiManager {
             }
         }
         content=content.replace('【其他人的名字】',othersNames.substring(0, othersNames.length - 1));
-        player.messages.push({role: Roles.system, content: content});
-        player.messages.push({role: Roles.system, content: PROMPT_GAME_RULES});
+        player.messages.push({role: Roles.system, content: content+'\n\n'+PROMPT_GAME_RULES});
 
 
     }
