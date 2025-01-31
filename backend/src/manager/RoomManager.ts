@@ -30,8 +30,9 @@ export class RoomManager {
         //
         room.words = words;
 
+        const playerNum = AiPlayerNames.length;
         //创建5个AI玩家和1个人类玩家，先全部设置为统一样子：平民、AI、未出局
-        for (let i = 0; i < 6; i++) {
+        for (let i = 0; i < playerNum; i++) {
             const player = new PlayerVO();
             player.identity = Identity.commoner;
             player.name = AiPlayerNames[i];
@@ -44,13 +45,13 @@ export class RoomManager {
             room.players.push(player);
         }
         // 随机决定人类玩家的编号
-        const humanNumber = Math.floor(Math.random() * 6) + 1;
+        const humanNumber = Math.floor(Math.random() * playerNum) + 1;
         //1个人类玩家的字段覆盖
         room.players[humanNumber - 1].isAi = false;
         room.players[humanNumber - 1].name = "桂花糕";
 
         // 随机决定卧底玩家的编号
-        const undercoverNumber = Math.floor(Math.random() * 6) + 1;
+        const undercoverNumber = Math.floor(Math.random() * playerNum) + 1;
         // 1个卧底玩家的字段覆盖
         room.players[undercoverNumber - 1].identity = Identity.undercover;
         room.players[undercoverNumber - 1].word = words[1];
