@@ -23,6 +23,7 @@ export const Chatroom = (props: {}) => {
             return;
         }
         setIsLoading(false);
+        setIsGameStarted(true);
     }
 
     // on mounted
@@ -128,7 +129,10 @@ export const Chatroom = (props: {}) => {
         {isGameStarted ? (
 <></>
         ) : (
-            <button onClick={startGame}>开始游戏</button>
+
+            <div className="send">
+                <button onClick={startGame}>开始游戏</button>
+            </div>
         )}
         {isWaitingMeDescribe && <div className="send">
           <input placeholder={`描述你的词语${word}`} value={input}

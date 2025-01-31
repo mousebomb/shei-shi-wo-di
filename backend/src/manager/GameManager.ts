@@ -3,6 +3,7 @@ import {server} from "../index";
 import PlayerVO from "../vo/PlayerVO";
 import {AiManager} from "./AiManager";
 import {BaseConnection} from "tsrpc";
+import {RoomManager} from "./RoomManager";
 
 export default class GameManager {
     private static instance: GameManager;
@@ -34,37 +35,32 @@ export default class GameManager {
             // 如果尚未开始，则进入第一轮
             if ( room.round == 0 )
             {
-                room.round=1;
-                room.currentRoundStep = RoomRoundStep.describe;
-                room.currentPlayer = 1;
-                // 开始 按序号描述，直到玩家时 返回并等待玩家输入
-                await conn.sendMsg("Chat",{
-                    content:
-                        "第"+room.round+"轮 【描述阶段】，开始。"
-                    ,
-                    time:new Date(),
-                });
+                await this.gameNewRoundBegin(room,conn);
             }
             // 当前轮的阶段
             if ( room.currentRoundStep == RoomRoundStep.describe )
             {
                 // 描述阶段
-                const describeIsWaiting = await this.gamePlayerDescribe(room,room.currentPlayer,conn);
-                // 如果玩家正在输入，则等待玩家输入，退出本次处理，交由玩家输入后再次发起gameNext()
-                if ( describeIsWaiting ) return;
-                if ( room.currentPlayerInputing ) return;
-                // 玩家输入完毕，进入下一个玩家
+                // 检测是否全员描述完毕，进入下一个环节
                 if ( room.currentPlayer > room.players.length )
-                {//如果所有玩家都已结束，则进入下一环节
+                {   //如果所有玩家都已结束，则进入下一环节
                     room.currentRoundStep = RoomRoundStep.vote;
                     room.currentPlayer = 1;
                     // 开始 投票
                     await conn.sendMsg("Chat",{
                         content:
                             "第"+room.round+"轮 【投票阶段】，开始。"
-                      ,
+                        ,
                         time:new Date(),
                     });
+                    RoomManager.getInstance().beginVote(room);
+                }else{
+
+                    // 请当前玩家描述
+                    const describeIsWaiting = await this.gamePlayerDescribe(room,room.currentPlayer,conn);
+                    // 如果玩家正在输入，则等待玩家输入，退出本次处理，交由玩家输入后再次发起gameNext()
+                    if ( describeIsWaiting ) return;
+                    if ( room.currentPlayerInputing ) return;
                 }
 
 
@@ -73,31 +69,72 @@ export default class GameManager {
             if ( room.currentRoundStep == RoomRoundStep.vote )
             {
                 // 投票阶段
-                const voteIsWaiting = await this.gamePlayerVote(room,room.currentPlayer,conn);
-                if ( voteIsWaiting ) return;
-                if ( room.currentPlayerInputing ) return;
-                // 玩家输入完毕，进入下一个玩家
-                if(++room.currentPlayer > room.players.length )
+                // 环节检测 是否全员投票完毕，进入下一个环节
+                if(room.currentPlayer > room.players.length )
                 {
                     // 所有玩家都已结束，则计票，并淘汰一名投票最多的玩家。
-
-                    // 若仍有足够玩家，卧底仍在，则进入下一轮
-                    room.round++;
-                    room.currentRoundStep = RoomRoundStep.describe;
-                    room.currentPlayer = 1;
-                    // 开始 按序号描述
-                    await conn.sendMsg("Chat",{
-                        content:
-                            "第"+room.round+"轮 【描述阶段】，开始。"
-                        ,
-                        time:new Date(),
-                    });
+                    const isGameEnd = await t
+                    his.gameRoundResult(room,conn);
+                    if(isGameEnd){
+                        // 游戏结束 跳出循环
+                        return;
+                    }else{
+                        // 若仍有足够玩家，卧底仍在，则进入下一轮
+                        await this.gameNewRoundBegin(room,conn);
+                    }
+                }else{
+                    // 投票阶段，请当前玩家投票
+                    const voteIsWaiting = await this.gamePlayerVote(room,room.currentPlayer,conn);
+                    if ( voteIsWaiting ) return;
+                    if ( room.currentPlayerInputing ) return;
                 }
             }
         }
+    }
 
+    /** 投票结束后 一轮的结果， 以及是否游戏结束
+     * 返回 游戏是否结束 */
+    async gameRoundResult(room:RoomVO,conn :BaseConnection<any>):Promise<boolean> {
+        // 淘汰一名投票最多的玩家。
+        const eliminatedPlayer = RoomManager.getInstance().voteResult(room);
+        const thePlayer = room.players[eliminatedPlayer-1];
+        await conn.sendMsg("Chat", {
+            content:
+                "第"+room.round+"轮 【投票阶段】，结束。"+thePlayer.getFullName()+"被淘汰。"
+          ,
+            time: new Date(),
+        });
+        // 若仍有足够玩家，卧底仍在，则进入下一轮，否则游戏结束
+        let isGameEnd = RoomManager.getInstance().checkGameOver(room);
+        if (isGameEnd) {
+            // 游戏结束 公布人员身份和词
+            await conn.sendMsg("Chat", {
+                content:
+                    "游戏结束。"
+                ,
+                time: new Date(),
+            });
+        }
+        return isGameEnd;
 
     }
+
+    async gameNewRoundBegin(room:RoomVO,conn :BaseConnection<any>)
+    {
+        // 若仍有足够玩家，卧底仍在，则进入下一轮
+        room.round++;
+        room.currentRoundStep = RoomRoundStep.describe;
+        room.currentPlayer = 1;
+        // 开始 按序号描述
+        await conn.sendMsg("Chat",{
+            content:
+                "第"+room.round+"轮 【描述阶段】，开始。"
+            ,
+            time:new Date(),
+        });
+    }
+
+
 
     // 人类玩家输入描述
     public async userInputDescribe(describeContent : string,room:RoomVO,conn :BaseConnection<any>){
@@ -119,6 +156,34 @@ export default class GameManager {
                 })
             }
         }
+        room.currentPlayerInputing = false;
+        room.currentPlayer++;
+        //继续游戏
+        await this.gameNext(room,conn);
+    }
+    // 玩家投票
+    public async userInputVote(voteToPlayer : number,reason : string,room:RoomVO,conn :BaseConnection<any>){
+        //同步给所有玩家 AI和人类
+        const player = room.players[room.currentPlayer-1];
+        // 广播同步给所有player的历史消息
+        for (let j =0;j<room.players.length;j++)
+        {
+            // 对玩家，发送msg；对AI，追加aimessage ； 包括自己
+            if ( room.players[j].isAi )
+            {
+                AiManager.getInstance().appendAiVoteMessage(room.round,player,{voteToPlayer:voteToPlayer,reason:reason},room.players[j]);
+            }else{
+                // 广播给玩家
+                await conn.sendMsg("Chat",{
+                    content: player.getFullName()+"投票给玩家"+voteToPlayer+"，理由:\""+reason +"\"。"
+                   ,
+                    time:new Date(),
+                })
+            }
+        }
+        //计票
+        RoomManager.getInstance().vote(room,voteToPlayer);
+        //标记玩家已完成输入
         room.currentPlayerInputing = false;
         room.currentPlayer++;
         //继续游戏
@@ -191,12 +256,15 @@ export default class GameManager {
         {
             //AI玩家 且已出局，跳过，直接完成本玩家输入
             room.currentPlayerInputing = false;
+            room.currentPlayer++;
             return false;
         }else{
             //AI玩家 且没出局 则开始投票
             conn.logger.log("GameManager/default 玩家"+(i+1) + room.players[i].name+"投票请求中");
             const voteContent = await AiManager.getInstance().agentVote(room.players[i],room);
             conn.logger.log("GameManager/default 玩家"+(i+1) + room.players[i].name+"投票："+voteContent.voteToPlayer);
+            // 计票
+            RoomManager.getInstance().vote(room,voteContent.voteToPlayer);
             // 广播同步给所有player的历史消息
             for (let j =0;j<room.players.length;j++)
             {
@@ -214,6 +282,7 @@ export default class GameManager {
                 }
             }
             room.currentPlayerInputing = false;
+            room.currentPlayer++;
             return false;
 
         }

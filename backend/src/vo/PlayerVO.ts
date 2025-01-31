@@ -18,6 +18,8 @@ export default class PlayerVO{
 
     // 当前是否已被投出局
     dead: boolean = false;
+    // 本轮内被投票卧底的计票
+    voteCount: number = 0;
 
     // 之前的聊天记录
     messages: Message[] = [];

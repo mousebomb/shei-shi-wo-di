@@ -114,9 +114,17 @@ export class AiManager {
         // 返回的内容可能是```json {jsonContent}``` 也可能是{jsonContent}，需要去掉可能存在的```json ```
         respContent.content = respContent.content.replace(/```json/g, '');
         respContent.content = respContent.content.replace(/```/g, '');
-        //json解析
-        let jsonContent = JSON.parse(respContent.content);
-        return jsonContent as {voteToPlayer:number,reason: string};
+        //json解析 ; AI有时候不稳定，返回的格式不是json，需要try catch，如果返回不合法，就重新生成
+        try {
+            let jsonContent = JSON.parse(respContent.content);
+            return jsonContent as {voteToPlayer:number,reason: string};
+        }catch (e) {
+            console.log("AiManager/AiManager/agentVote json parse failed, retry",e);
+            // 重新生成
+            // 先得回滚两条消息
+            player.messages.length = player.messages.length - 2;
+            return await this.agentVote(player, room);
+        }
     }
     //维护messages，追加一条ai投票
     appendAiVoteMessage(round:number,player: PlayerVO,content:{voteToPlayer:number,reason: string},toPlayer:PlayerVO){
@@ -150,7 +158,6 @@ export class AiManager {
     /**
      * 调用大模型
      * @param messages 消息
-     * todo : raw 把自己的think包含加入messages
      */
     llmRequest(messages: Message[],):Promise<{raw:string,content:string}> {
         return new Promise((resolve, reject) => {
@@ -174,9 +181,14 @@ export class AiManager {
                     if (respData) {
                         const raw = respData.choices[0].message.content;
                         let content = raw;
+                        if ( content.length==0 )
+                        {
+                            // 大模型损坏
+                            reject('大模型服务损坏，返回空字符串');
+                        }
                         console.log("AiManager/AiManager/llmRequest->Resp Raw:",content);
                         // 剔除think部分，只要think之后的内容
-                        const thinkIndex = content.indexOf('</think>');
+                        const thinkIndex = content.lastIndexOf('</think>');
                         if(thinkIndex !== -1) {
                             content = respData.choices[0].message.content.substring(thinkIndex + '</think>'.length);
                         }

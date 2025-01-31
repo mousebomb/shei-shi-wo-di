@@ -67,4 +67,48 @@ export class RoomManager {
         room.currentPlayer = 1;
 
     }
+
+    beginVote(room:RoomVO)
+    {
+        for (let i = 0; i < room.players.length; i++) {
+            room.players[i].voteCount = 0;
+        }
+    }
+    //计票
+    vote(room:RoomVO,playerNumber:number)
+    {
+        room.players[playerNumber-1].voteCount++;
+    }
+    //计票结果，返回计票最多的玩家编号
+    voteResult(room:RoomVO):number
+    {
+        let max = 0;
+        let maxPlayer = 0;
+        for (let i = 0; i < room.players.length; i++) {
+            if (room.players[i].voteCount > max) {
+                max = room.players[i].voteCount;
+                maxPlayer = i;
+            }
+        }
+        //把玩家标记为出局
+        room.players[maxPlayer].dead = true;
+        //返回计票最多的玩家编号
+        return maxPlayer+1;
+    }
+
+    // 盘点当前人数，看游戏是否继续
+    checkGameOver(room:RoomVO):boolean
+    {
+        let aliveCount = 0;
+        for (let i = 0; i < room.players.length; i++) {
+            if (!room.players[i].dead) {
+                aliveCount++;
+            }
+        }
+        // 如果卧底人数为0，则游戏结束； 如果平民人数小于或等于存活的卧底人数，则游戏结束
+        if (room.players[room.undercoverPlayer-1].dead) {
+            return true;
+        }
+        return aliveCount <= 2;
+    }
 }

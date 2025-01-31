@@ -13,6 +13,7 @@
 ## LM Studio接入
 
 开启server
+LM Studio默认可能是4096tokens，要手动改高一点，deepseek-r1-distill-qwen-7b 可以最大128K。
 
 
 
