@@ -8,6 +8,7 @@ import {
 import axios from 'axios';
 import {RoomVO} from "../vo/RoomVO";
 import PlayerVO, {Identity} from "../vo/PlayerVO";
+import {LLM_MODEL} from "../constants";
 
 // 定义请求的 URL
 const url = 'http://192.168.50.8:1234/api/v0/chat/completions';
@@ -168,7 +169,7 @@ export class AiManager {
 
             // 定义请求的 body
             const data = {
-                model: 'deepseek-r1-distill-qwen-7b',
+                model: LLM_MODEL,
                 messages: messages,
                 temperature: 0.7,
                 max_tokens: -1,
