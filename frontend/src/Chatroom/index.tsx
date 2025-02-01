@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { getClient } from "../getClient";
 import { MsgChat } from "../shared/protocols/MsgChat";
 import './index.less';
-import {Spin, Toast} from "@douyinfe/semi-ui";
+import {Radio, RadioGroup, Spin, Toast} from "@douyinfe/semi-ui";
 
 export const Chatroom = (props: {}) => {
     const [input, setInput] = useState('');
@@ -14,6 +14,8 @@ export const Chatroom = (props: {}) => {
     const [isWaitingMeVote, setIsWaitingMeVote] = useState(false);
     const [isWaitingMeDescribe, setIsWaitingMeDescribe] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [voteToPlayer, setVoteToPlayer] = useState(0);
+    const [voteOptions , setVoteOptions] = useState([] as number[]);
 
     async function startGame(){
         setIsLoading(true);
@@ -47,6 +49,7 @@ export const Chatroom = (props: {}) => {
         client.listenMsg('PlsVote', v => {
             setIsWaitingMeVote(true);
             setInput('');
+            setVoteOptions(v.options);
             Toast.success("请投票");
         })
         client.listenMsg('PlsDescribe', v => {
@@ -83,23 +86,15 @@ export const Chatroom = (props: {}) => {
         setIsWaitingMeDescribe(false);
     }
     async function sendVote(){
-        if (input.length == 0) {
-            Toast.error("投票不能为空");
-            return;
-        }
-        let voteToPlayer = parseInt(input);
-        if (isNaN(voteToPlayer)) {
-            Toast.error("投票必须是数字");
-            return;
-        }
-        //必须是1～6之间的数字
-        if (voteToPlayer < 1 || voteToPlayer > numPlayers) {
-            Toast.error("投票必须是1～"+numPlayers+"之间的数字");
-            return;
-        }
+        // voteToPlayer必须属于 voteOptions之一
+         if (!voteOptions.includes(voteToPlayer)) {
+             Toast.error("投票必须是"+voteOptions.join(",")+"中的数字");
+             return;
+         }
         setIsLoading(true);
         let ret = await client.callApi('SendVote', {
-            voteToPlayer: voteToPlayer
+            voteToPlayer: voteToPlayer,
+            reason:input
         });
         setIsLoading(false);
         // Error
@@ -131,7 +126,6 @@ export const Chatroom = (props: {}) => {
         {isGameStarted ? (
 <></>
         ) : (
-
             <div className="send">
                 <button onClick={startGame}>开始游戏</button>
             </div>
@@ -147,18 +141,33 @@ export const Chatroom = (props: {}) => {
 
         </div>}
         {
-            isWaitingMeVote && <div className="send">
-                <input placeholder={`请输入你要投票的玩家的序号`} value={input}
-                       onChange={e => {
-                           setInput(e.target.value)
-                       }}
-                       onKeyPress={e => e.key === 'Enter' && sendVote()}
-                />
-                <button onClick={sendVote}>确认投票</button>
-            </div>
+            isWaitingMeVote && (
+                <>
+                    <RadioGroup type='button' buttonSize='middle' defaultValue={0} aria-label="投票给玩家序号"
+                                style={{textAlign: "center"}}
+                                onChange={e => setVoteToPlayer(e.target.value)}>
+                        <Radio value={1}>1</Radio>
+                        <Radio value={2}>2</Radio>
+                        <Radio value={3}>3</Radio>
+                        <Radio value={4}>4</Radio>
+                        <Radio value={5}>5</Radio>
+                        <Radio value={6}>6</Radio>
+                    </RadioGroup>
+                    <div className="send">
+                        <input placeholder={`${voteToPlayer}是卧底的理由`} value={input}
+                               onChange={e => {
+                                   setInput(e.target.value)
+                               }}
+                               onKeyPress={e => e.key === 'Enter' && sendVote()}
+                        />
+                        <button onClick={sendVote}>确认投票</button>
+                    </div>
+                </>
+            )
+
         }
         {isLoading && <div className="full-loading">
-            <Spin size={"large"}/>
+          <Spin size={"large"}/>
         </div>}
     </div>
 }

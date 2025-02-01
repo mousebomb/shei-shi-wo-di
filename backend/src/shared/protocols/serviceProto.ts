@@ -36,7 +36,7 @@ export interface ServiceType {
 }
 
 export const serviceProto: ServiceProto<ServiceType> = {
-    "version": 3,
+    "version": 4,
     "services": [
         {
             "id": 0,
@@ -125,7 +125,19 @@ export const serviceProto: ServiceProto<ServiceType> = {
             "type": "Interface"
         },
         "MsgPlsVote/MsgPlsVote": {
-            "type": "Interface"
+            "type": "Interface",
+            "properties": [
+                {
+                    "id": 0,
+                    "name": "options",
+                    "type": {
+                        "type": "Array",
+                        "elementType": {
+                            "type": "Number"
+                        }
+                    }
+                }
+            ]
         },
         "PtlSend/ReqSend": {
             "type": "Interface",

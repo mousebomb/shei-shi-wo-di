@@ -9,6 +9,6 @@ export default async function (call: ApiCall<ReqSendVote, ResSendVote>) {
         return call.error("room is null");
     }
     await call.succ({ time: new Date()});
-    await GameManager.getInstance().userInputVote(call.req.voteToPlayer,"觉得他的词和我的特征不符合",room,call.conn);
+    await GameManager.getInstance().userInputVote(call.req.voteToPlayer,call.req.reason,room,call.conn);
 
 }

@@ -233,7 +233,9 @@ export default class GameManager {
             // 人类玩家，则等待玩家输入
             room.currentPlayerInputing = true;
             // 广播给玩家
-            await conn.sendMsg("PlsVote",{});
+            await conn.sendMsg("PlsVote",{
+                options:room.players.filter((vo)=>!vo.dead).map(vo=>vo.number)
+            });
             return true;
         }else{
             //AI玩家 且没出局 则开始投票
