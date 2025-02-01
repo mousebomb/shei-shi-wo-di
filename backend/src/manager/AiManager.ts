@@ -100,8 +100,10 @@ export class AiManager {
         let content = player.identity== Identity.undercover?PROMPT_Vote_UnderCover:PROMPT_Vote;
         content=content.replace('【round】',room.round.toString());
         content = content.replace('【词】',player.word);
-        player.messages.push({role: Roles.user, content: content});
-        let respContent = await this.llmRequest(player.messages);
+        // player.messages.push({role: Roles.user, content: content});
+        // 改成 只在请求时加上提示message，但是不记录到历史
+        const messages = player.messages.concat([{role: Roles.user, content: content}]);
+        let respContent = await this.llmRequest(messages);
         // AI 总是时不时犯规，所以要做一次处理，如果暴露了自己的词，强行替换
         if (respContent.content.indexOf(player.word) !== -1) {
             // 全局替换
@@ -110,8 +112,8 @@ export class AiManager {
         // 返回的内容可能是```json {jsonContent}``` 也可能是{jsonContent}，需要去掉可能存在的```json ```
         respContent.content = respContent.content.replace(/```json/g, '');
         respContent.content = respContent.content.replace(/```/g, '');
-        // AI自己的发言记录到自己的messages中
-        player.messages.push({role: Roles.assistant, content:respContent.content});
+        // // AI自己的发言记录到自己的messages中
+        // player.messages.push({role: Roles.assistant, content:respContent.content});
         //json解析 ; AI有时候不稳定，返回的格式不是json，需要try catch，如果返回不合法，就重新生成
         try {
             let jsonContent = JSON.parse(respContent.content);
@@ -119,8 +121,8 @@ export class AiManager {
         }catch (e) {
             console.log("AiManager/AiManager/agentVote json parse failed, retry",e);
             // 重新生成
-            // 先得回滚两条消息
-            player.messages.length = player.messages.length - 2;
+            // 先得回滚两条消息 (上面改成了不push到自己的messages中，所以这里不需要回滚了)
+            // player.messages.length = player.messages.length - 2;
             return await this.agentVote(player, room);
         }
     }

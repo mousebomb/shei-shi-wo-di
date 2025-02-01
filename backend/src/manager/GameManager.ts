@@ -93,7 +93,7 @@ export default class GameManager {
         const eliminatedPlayer = RoomManager.getInstance().voteResult(room);
         const thePlayer = room.players[eliminatedPlayer-1];
         // 此时淘汰玩家已被标记为淘汰
-        let content = thePlayer.getFullName() + "得票最高，被淘汰。他是" + (thePlayer.identity == Identity.commoner ? "平民" : "卧底") + "。";
+        let content = "第"+room.round+"轮投票结果："+thePlayer.getFullName() + "得票最高，被淘汰。他是" + (thePlayer.identity == Identity.commoner ? "平民" : "卧底") + "。";
         let isGameEnd = false;
         // 开始盘点人数
         const aliveUndercoverCount = RoomManager.getInstance().calcUndercoverAlive(room);
@@ -136,7 +136,7 @@ export default class GameManager {
         room.currentPlayer = 1;
         // 开始 按序号描述
         // 对玩家，发送msg；对AI，追加aimessage ； 包括自己
-        const content = "第" + room.round + "轮 【描述阶段】，开始。";
+        const content = "现在进入第" + room.round + "轮\n 【描述阶段】，开始。";
         this.broadcastToRoom(room, -1, content, conn);
     }
 
@@ -155,7 +155,7 @@ export default class GameManager {
         //同步给所有玩家 AI和人类
         const player = room.players[room.currentPlayer-1];
         // 广播同步给所有player的历史消息
-        const messageContent = player.getFullName() + "描述道:" + describeContent;
+        const messageContent = player.getFullName() + "描述道:\"" + describeContent+ "\"。";
         // 对玩家，发送msg；对AI，追加aimessage ； 包括自己
         this.broadcastToRoom(room, -1, messageContent, conn);
         room.currentPlayerInputing = false;
@@ -168,9 +168,11 @@ export default class GameManager {
         //同步给所有玩家 AI和人类
         const player = room.players[room.currentPlayer-1];
         // 广播同步给所有player的历史消息 包括自己
-        const messageContent = player.getFullName() + "投票给玩家" + voteToPlayer + "，理由:\"" + reason + "\"。";
+        const messageContent = player.getFullName() + ":投票给" + voteToPlayer + "，理由:\"" + reason + "\"。";
         // 对玩家，发送msg；对AI，追加aimessage ； 包括自己
-        this.broadcastToRoom(room, -1, messageContent, conn);
+        // this.broadcastToRoom(room, -1, messageContent, conn);
+        // 改成：只发给玩家
+        await conn.sendMsg("Chat", {content: messageContent, time: new Date(),});
         //计票
         RoomManager.getInstance().vote(room,voteToPlayer);
         //标记玩家已完成输入
@@ -210,9 +212,11 @@ export default class GameManager {
             const describeContent = await AiManager.getInstance().agentDescribeWord(player,room.round,i+1);
             conn.logger.log("GameManager/default "+ player.getFullName()+"描述："+describeContent);
             // 广播同步给所有player的历史消息
-            const messageContent = player.getFullName() + "描述道:" + describeContent;
-            // 跳过ai自己，因为自己的已经在agentDescribeWord中记录到自己的messages中了
-            this.broadcastToRoom(room, player.number, messageContent, conn);
+            const messageContent = player.getFullName() + "描述道:\"" + describeContent+ "\"。";
+            // // 跳过ai自己，因为自己的已经在agentDescribeWord中记录到自己的messages中了
+            // this.broadcastToRoom(room, player.number, messageContent, conn);
+            // 不跳过自己:
+            this.broadcastToRoom(room, -1, messageContent, conn);
             room.currentPlayerInputing = false;
             room.currentPlayer++;
             return false;
@@ -245,9 +249,12 @@ export default class GameManager {
             // 计票
             RoomManager.getInstance().vote(room,voteContent.voteToPlayer);
             // 广播同步给所有player的历史消息
-            const messageContent = player.getFullName() + "投票给玩家" + room.players[voteContent.voteToPlayer - 1].getFullName() + "，理由:\"" + voteContent.reason + "\"。";
-            // 对玩家，发送msg；对AI，追加aimessage ； 包括AI自己；因为虽然自己的已经在agentVote中记录到自己的messages中了，但记录计票的文案有所不同
-            this.broadcastToRoom(room, -1, messageContent, conn);
+            const messageContent = player.getFullName() + ":投票给" + room.players[voteContent.voteToPlayer - 1].getFullName() + "，理由:\"" + voteContent.reason + "\"。";
+            // // 对玩家，发送msg；对AI，追加aimessage ； 包括AI自己；因为虽然自己的已经在agentVote中记录到自己的messages中了，但记录计票的文案有所不同
+            // this.broadcastToRoom(room, -1, messageContent, conn);
+            // 改成只发给玩家
+            await conn.sendMsg("Chat", {content: messageContent, time: new Date(),});
+            //标记玩家已完成输入
             room.currentPlayerInputing = false;
             room.currentPlayer++;
             return false;
