@@ -8,30 +8,19 @@
 
 方案2: 用deepseek R1 本地部署 + CosyVoice 本地部署。
 
+后来发现R1思维模式不适合本地部署玩这游戏，因为它每次输出tokens太多了，会需要等待更久。
+
 
 
 ## LM Studio接入
 
 开启server
+
+![image-20250201102953699](README.assets/image-20250201102953699.png)
+
 LM Studio默认可能是4096tokens，要手动改高一点，deepseek-r1-distill-qwen-7b 可以最大128K。
 
 
-
-```
-curl http://192.168.50.8:1234/api/v0/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "deepseek-r1-distill-qwen-7b",
-    "messages": [
-      { "role": "system", "content": "Always answer in rhymes." },
-      { "role": "user", "content": "Introduce yourself." }
-    ],
-    "temperature": 0.7,
-    "max_tokens": -1,
-    "stream": false
-  }'
-
-```
 
 # 服务流程：
 
@@ -103,5 +92,11 @@ sequenceDiagram
 
 
 
+# 运行
 
+本地运行LMStudio，下载好模型，开启开发者服务器。
+
+客户端: `cd frontend && npm run-script dev`
+
+服务端：`cd backend && npm run-script dev`
 

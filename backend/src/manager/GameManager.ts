@@ -155,7 +155,7 @@ export default class GameManager {
         //同步给所有玩家 AI和人类
         const player = room.players[room.currentPlayer-1];
         // 广播同步给所有player的历史消息
-        const messageContent = player.getFullName() + "描述道:\"" + describeContent;
+        const messageContent = player.getFullName() + "描述道:" + describeContent;
         // 对玩家，发送msg；对AI，追加aimessage ； 包括自己
         this.broadcastToRoom(room, -1, messageContent, conn);
         room.currentPlayerInputing = false;
@@ -210,7 +210,7 @@ export default class GameManager {
             const describeContent = await AiManager.getInstance().agentDescribeWord(player,room.round,i+1);
             conn.logger.log("GameManager/default "+ player.getFullName()+"描述："+describeContent);
             // 广播同步给所有player的历史消息
-            const messageContent = player.getFullName() + "描述道:\"" + describeContent;
+            const messageContent = player.getFullName() + "描述道:" + describeContent;
             // 跳过ai自己，因为自己的已经在agentDescribeWord中记录到自己的messages中了
             this.broadcastToRoom(room, player.number, messageContent, conn);
             room.currentPlayerInputing = false;

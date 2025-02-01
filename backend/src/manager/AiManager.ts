@@ -8,10 +8,10 @@ import {
 import axios from 'axios';
 import {RoomVO} from "../vo/RoomVO";
 import PlayerVO, {Identity} from "../vo/PlayerVO";
-import {LLM_MODEL} from "../constants";
+import {LLM_API, LLM_MODEL} from "../constants";
 
 // 定义请求的 URL
-const url = 'http://192.168.50.8:1234/api/v0/chat/completions';
+const url = LLM_API;
 
 // 定义请求的 headers
 const headers = {

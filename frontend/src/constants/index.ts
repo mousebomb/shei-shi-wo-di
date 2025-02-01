@@ -6,8 +6,5 @@ export const IS_DEV = window.location.hostname === "localhost" ||
     window.location.hostname.startsWith("192.168") ||
     window.location.hostname.startsWith("127.0.0.1");
 //常量
-export const SERVER: string = IS_DEV ? "http://192.168.50.3:3000" : "https://sver.oeoai.com";
-// export const SERVER :string = "http://121.41.91.7:3000";
+export const SERVER: string = IS_DEV ? "ws://127.0.0.1:3000" : "ws://192.168.50.3:3000";
 
-
-export const ROUTE_ROOTPATH = "/management";  // 本地是根目录
