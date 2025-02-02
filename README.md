@@ -91,6 +91,11 @@ sequenceDiagram
 ```
 
 
+# CosyVoice接入
+CosyVoice 是一个开源的语音合成工具，它可以根据文本生成高质量的语音。它支持多种语言和风格，并且可以根据用户的需求进行自定义。CosyVoice 可以在 Windows、Linux 和 macOS 上运行。
+按照官方文档部署到conda环境。
+然后把restapi.py放到cosyvoice目录下，然后安装库`pip install Flask`，
+运行`python restapi.py`。
 
 # 运行
 
