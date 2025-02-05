@@ -16,11 +16,12 @@ export enum ErrorCode {
 
 // export const LLM_MODEL =  'deepseek-r1-distill-qwen-7b';
 // export const LLM_MODEL =  'qwen2.5-7b-instruct-1m';
-// export const LLM_MODEL =  'qwen2.5-14b-instruct';
-export const LLM_MODEL =  'qwen2.5-32b-instruct-mlx';
+export const LLM_MODEL =  'qwen2.5-14b-instruct';
+// export const LLM_MODEL =  'qwen2.5-32b-instruct-mlx';
 // export const LLM_MODEL =  'deepseek-r1-distill-qwen-32b';
 // export const LLM_API = 'http://192.168.50.8:1234/api/v0/chat/completions';
 export const LLM_API = 'http://192.168.50.3:1234/api/v0/chat/completions';
+export const LLM_LOG_V = true;
 
 export const AiPlayerNames =[
     "猴哥",
@@ -32,3 +33,5 @@ export const AiPlayerNames =[
     "关羽",
     "刘备",
 ]
+
+export const CosyVoice_API = 'http://192.168.50.8:5000/synthesize';

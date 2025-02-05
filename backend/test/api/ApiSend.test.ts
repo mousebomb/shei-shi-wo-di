@@ -17,22 +17,6 @@ describe('ApiSend', function () {
         assert.strictEqual(res.isSucc, true, 'Failed to connect to server, have you executed `npm run dev` already?');
     })
 
-    it('Success', async function () {
-        let ret = await client.callApi('Send', {
-            content: 'Test'
-        });
-        assert.ok(ret.isSucc)
-    });
-
-    it('Check content is empty', async function () {
-        let ret = await client.callApi('Send', {
-            content: ''
-        });
-        assert.deepStrictEqual(ret, {
-            isSucc: false,
-            err: new TsrpcError('Content is empty')
-        });
-    })
 
     // 测试，创建房间，生成词语
     it('Create Room', async function () {

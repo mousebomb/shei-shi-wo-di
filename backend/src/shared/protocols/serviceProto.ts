@@ -3,17 +3,12 @@ import { MsgChat } from './MsgChat';
 import { MsgGameStarted } from './MsgGameStarted';
 import { MsgPlsDescribe } from './MsgPlsDescribe';
 import { MsgPlsVote } from './MsgPlsVote';
-import { ReqSend, ResSend } from './PtlSend';
 import { ReqSendDescribe, ResSendDescribe } from './PtlSendDescribe';
 import { ReqSendVote, ResSendVote } from './PtlSendVote';
 import { ReqStartGame, ResStartGame } from './PtlStartGame';
 
 export interface ServiceType {
     api: {
-        "Send": {
-            req: ReqSend,
-            res: ResSend
-        },
         "SendDescribe": {
             req: ReqSendDescribe,
             res: ResSendDescribe
@@ -59,11 +54,6 @@ export const serviceProto: ServiceProto<ServiceType> = {
             "type": "msg"
         },
         {
-            "id": 1,
-            "name": "Send",
-            "type": "api"
-        },
-        {
             "id": 6,
             "name": "SendDescribe",
             "type": "api",
@@ -99,6 +89,22 @@ export const serviceProto: ServiceProto<ServiceType> = {
                     "type": {
                         "type": "Date"
                     }
+                },
+                {
+                    "id": 2,
+                    "name": "senderId",
+                    "type": {
+                        "type": "Number"
+                    }
+                },
+                {
+                    "id": 3,
+                    "name": "voice",
+                    "type": {
+                        "type": "Buffer",
+                        "arrayType": "Uint8Array"
+                    },
+                    "optional": true
                 }
             ]
         },
@@ -113,10 +119,29 @@ export const serviceProto: ServiceProto<ServiceType> = {
                     }
                 },
                 {
-                    "id": 1,
-                    "name": "numPlayers",
+                    "id": 2,
+                    "name": "players",
                     "type": {
-                        "type": "Number"
+                        "type": "Array",
+                        "elementType": {
+                            "type": "Interface",
+                            "properties": [
+                                {
+                                    "id": 0,
+                                    "name": "name",
+                                    "type": {
+                                        "type": "String"
+                                    }
+                                },
+                                {
+                                    "id": 1,
+                                    "name": "num",
+                                    "type": {
+                                        "type": "Number"
+                                    }
+                                }
+                            ]
+                        }
                     }
                 }
             ]
@@ -135,30 +160,6 @@ export const serviceProto: ServiceProto<ServiceType> = {
                         "elementType": {
                             "type": "Number"
                         }
-                    }
-                }
-            ]
-        },
-        "PtlSend/ReqSend": {
-            "type": "Interface",
-            "properties": [
-                {
-                    "id": 0,
-                    "name": "content",
-                    "type": {
-                        "type": "String"
-                    }
-                }
-            ]
-        },
-        "PtlSend/ResSend": {
-            "type": "Interface",
-            "properties": [
-                {
-                    "id": 0,
-                    "name": "time",
-                    "type": {
-                        "type": "Date"
                     }
                 }
             ]

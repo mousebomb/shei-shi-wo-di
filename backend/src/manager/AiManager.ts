@@ -8,7 +8,7 @@ import {
 import axios from 'axios';
 import {RoomVO} from "../vo/RoomVO";
 import PlayerVO, {Identity} from "../vo/PlayerVO";
-import {LLM_API, LLM_MODEL} from "../constants";
+import {LLM_API, LLM_LOG_V, LLM_MODEL} from "../constants";
 
 // 定义请求的 URL
 const url = LLM_API;
@@ -188,7 +188,9 @@ export class AiManager {
                 max_tokens: -1,
                 stream: false,
             };
-            console.log("AiManager/AiManager/llmRequest",           messages );
+            if(LLM_LOG_V) {
+                console.log("AiManager/AiManager/llmRequest", messages);
+            }
 
             // 发起 POST 请求
             axios.post(url, data, {headers})
@@ -204,7 +206,9 @@ export class AiManager {
                             // 大模型损坏
                             reject('大模型服务损坏，返回空字符串');
                         }
-                        console.log("AiManager/AiManager/llmRequest->Resp Raw:",content);
+                        if(LLM_LOG_V) {
+                            console.log("AiManager/AiManager/llmRequest->Resp Raw:",content);
+                        }
                         // 剔除think部分，只要think之后的内容
                         const thinkIndex = content.lastIndexOf('</think>');
                         if(thinkIndex !== -1) {

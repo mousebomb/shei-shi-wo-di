@@ -10,7 +10,7 @@ export const Chatroom = (props: {}) => {
     const [client] = useState(getClient());
     const [isGameStarted, setIsGameStarted] = useState(false);
     const [word, setWord] = useState("");
-    const [numPlayers, setNumPlayers] = useState(0);
+    const [players,setPlayers] = useState([] as {name : string, num : number}[]);
     const [isWaitingMeVote, setIsWaitingMeVote] = useState(false);
     const [isWaitingMeDescribe, setIsWaitingMeDescribe] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -39,11 +39,22 @@ export const Chatroom = (props: {}) => {
         });
 
         // Listen Msg
-        client.listenMsg('Chat', v => { setList(oldList => [...oldList, v]) })
+        client.listenMsg('Chat', v => {
+            setList(oldList => [...oldList, v]);
+            if ( v.voice ) {
+                // 将音频数据转换为Blob对象
+                console.log("index//",v.voice);
+                const blob = new Blob([v.voice], { type: 'audio/wav' });
+                const audio = new Audio(URL.createObjectURL(blob));
+                audio.play();
+            }else{
+                console.log("index// no voice");
+            }
+        })
         client.listenMsg('GameStarted', v => {
             setWord(v.word);
             setIsGameStarted(true);
-            setNumPlayers(v.numPlayers);
+            setPlayers(v.players);
             Toast.success("游戏开始，你的词是：" + v.word);
         })
         client.listenMsg('PlsVote', v => {

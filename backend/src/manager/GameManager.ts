@@ -4,6 +4,7 @@ import PlayerVO, {Identity} from "../vo/PlayerVO";
 import {AiManager} from "./AiManager";
 import {BaseConnection} from "tsrpc";
 import {RoomManager} from "./RoomManager";
+import VoiceManager from "./VoiceManager";
 
 export default class GameManager {
     private static instance: GameManager;
@@ -47,7 +48,9 @@ export default class GameManager {
                     room.currentRoundStep = RoomRoundStep.vote;
                     room.currentPlayer = 1;
                     // 开始 投票
-                    this.broadcastToRoom(room, -1, "第"+room.round+"轮 【投票阶段】，开始。", conn);
+                    const messageContent = "第"+room.round+"轮 【投票阶段】，开始。";
+                    const voice = (await VoiceManager.getInstance().synthesize(messageContent));
+                    this.broadcastToRoom(room, -1, messageContent, conn,0,voice);
                     RoomManager.getInstance().beginVote(room);
                 }else{
 
@@ -110,19 +113,23 @@ export default class GameManager {
         }
 
         // 广播 : 对玩家，发送msg；对AI，追加aimessage ； 包括自己
-        this.broadcastToRoom(room, -1, content, conn);
+        const voice = (await VoiceManager.getInstance().synthesize(content));
+        this.broadcastToRoom(room, -1, content, conn,0,voice);
 
         if (isGameEnd) {
             // 游戏结束 公布人员身份和词
+            const gameEndContent = "游戏结束。平民词是" + room.words[0] +
+                "，卧底词是" + room.words[1] +
+                "。卧底是" + room.players[room.undercoverPlayer - 1].getFullName() + "。";
             await conn.sendMsg("Chat", {
-                content: "游戏结束。平民词是" + room.words[0] +
-                    "，卧底词是" + room.words[1] +
-                    "。卧底是" + room.players[room.undercoverPlayer - 1].getFullName() + "。",
+                content: gameEndContent,
                 time: new Date(),
+                senderId: 0,
+                voice: (await VoiceManager.getInstance().synthesize(gameEndContent))
             });
         } else {
             // 若仍有足够玩家，卧底仍在，则进入下一轮
-            this.broadcastToRoom(room, -1, "游戏继续。", conn);
+            this.broadcastToRoom(room, -1, "游戏继续。", conn,0,(await VoiceManager.getInstance().synthesize('游戏继续')));
         }
         return isGameEnd;
 
@@ -137,16 +144,17 @@ export default class GameManager {
         // 开始 按序号描述
         // 对玩家，发送msg；对AI，追加aimessage ； 包括自己
         const content = "现在进入第" + room.round + "轮\n 【描述阶段】，开始。";
-        this.broadcastToRoom(room, -1, content, conn);
+        const voice = (await VoiceManager.getInstance().synthesize("游戏开始"));
+        this.broadcastToRoom(room, -1, content, conn,0,voice);
     }
 
     // 广播给房间的所有玩家 （如果要不包括自己，则传入要跳过的玩家序号，否则传入-1，正常玩家序号是1～6）
-    broadcastToRoom(room: RoomVO, skipPlayerNumber: number, content: string, conn: BaseConnection<any>) {
+    broadcastToRoom(room: RoomVO, skipPlayerNumber: number, content: string, conn: BaseConnection<any>,senderId:number,voice:Uint8Array) {
         RoomManager.getInstance().broadcast(room, skipPlayerNumber, (ai) => {
             AiManager.getInstance().appendAiMessage(ai, content);
         }, (human) => {
             // 广播给玩家
-            conn.sendMsg("Chat", {content: content, time: new Date(),});
+            conn.sendMsg("Chat", {content: content, time: new Date(),senderId, voice});
         });
     }
 
@@ -157,7 +165,7 @@ export default class GameManager {
         // 广播同步给所有player的历史消息
         const messageContent = player.getFullName() + "描述道:\"" + describeContent+ "\"。";
         // 对玩家，发送msg；对AI，追加aimessage ； 包括自己
-        this.broadcastToRoom(room, -1, messageContent, conn);
+        this.broadcastToRoom(room, -1, messageContent, conn,player.number,null);
         room.currentPlayerInputing = false;
         room.currentPlayer++;
         //继续游戏
@@ -216,7 +224,8 @@ export default class GameManager {
             // // 跳过ai自己，因为自己的已经在agentDescribeWord中记录到自己的messages中了
             // this.broadcastToRoom(room, player.number, messageContent, conn);
             // 不跳过自己:
-            this.broadcastToRoom(room, -1, messageContent, conn);
+            const voice = (await VoiceManager.getInstance().synthesize(describeContent));
+            this.broadcastToRoom(room, -1, messageContent, conn,player.number,voice);
             room.currentPlayerInputing = false;
             room.currentPlayer++;
             return false;
@@ -253,7 +262,8 @@ export default class GameManager {
             // // 对玩家，发送msg；对AI，追加aimessage ； 包括AI自己；因为虽然自己的已经在agentVote中记录到自己的messages中了，但记录计票的文案有所不同
             // this.broadcastToRoom(room, -1, messageContent, conn);
             // 改成只发给玩家
-            await conn.sendMsg("Chat", {content: messageContent, time: new Date(),});
+            const voice = (await VoiceManager.getInstance().synthesize("投票给"+room.players[voteContent.voteToPlayer-1].getFullName() + "。" + voteContent.reason + "。"));
+            await conn.sendMsg("Chat", {content: messageContent, time: new Date(),senderId: player.number,voice});
             //标记玩家已完成输入
             room.currentPlayerInputing = false;
             room.currentPlayer++;

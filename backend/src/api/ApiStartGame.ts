@@ -6,6 +6,7 @@ import {AiManager} from "../manager/AiManager";
 import {server} from "../index";
 import GameManager from "../manager/GameManager";
 import {PROMPT_WORDS} from "../constants/prompts";
+import VoiceManager from "../manager/VoiceManager";
 
 export default async function (call: ApiCall<ReqStartGame, ResStartGame>) {
     /*
@@ -34,8 +35,13 @@ export default async function (call: ApiCall<ReqStartGame, ResStartGame>) {
     await call.setSession("room",room);
     await call.conn.sendMsg("GameStarted",{
         word : room.players[room.humanPlayer-1].word,
-        numPlayers : room.players.length,
-    })
+        players : room.players.map((player)=>{
+            return {
+                name : player.name,
+                num : player.number
+            }
+        })
+    });
     // 开始游戏一轮
     await GameManager.getInstance().gameNext(room,call.conn);
 
