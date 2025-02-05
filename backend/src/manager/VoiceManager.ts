@@ -1,5 +1,5 @@
 // 定义请求的 URL
-import {CosyVoice_API, LLM_API} from "../constants";
+import {CosyVoice_API} from "../constants";
 import axios from "axios";
 import FormData from 'form-data';
 
@@ -35,11 +35,14 @@ export default class VoiceManager {
 
                 return uint8Array;
             } else {
-                throw new Error(`音频合成失败: 服务器返回状态码 ${response.status}`);
+                console.error('音频合成失败: 服务器返回状态码', response.status);
+                // throw new Error(`音频合成失败: 服务器返回状态码 ${response.status}`);
+                return null;
             }
         } catch (error) {
             console.error('音频合成请求失败:', error);
-            throw error;
+            // throw error;
+            return null;
         }
     }
 

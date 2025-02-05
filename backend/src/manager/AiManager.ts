@@ -1,4 +1,5 @@
 import {
+    DESCRIBE_ANGLE,
     PROMPT_Commoner,
     PROMPT_DescribeYourWord,
     PROMPT_GAME_RULES,
@@ -73,6 +74,9 @@ export class AiManager {
         let content = PROMPT_DescribeYourWord.replace('【round】',round.toString());
         content=content.replace('【order】',order.toString());
         content=content.replace(/【词】/g,player.word);
+        // 随机选择一个角度
+        const angle = DESCRIBE_ANGLE[Math.floor(Math.random()*DESCRIBE_ANGLE.length)];
+        content=content.replace('【角度】',angle);
         player.messages.push ({role: Roles.user, content: content});
         let respContent = await this.llmRequest(player.messages);
         // AI 总是时不时犯规，所以要做一次处理，如果暴露了自己的词，强行替换

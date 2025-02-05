@@ -19,7 +19,22 @@ export const PROMPT_GAME_RULES = readTextFile(path.join(__dirname, 'GAME_RULE.md
 export const PROMPT_ZhuChiRen = readTextFile(path.join(__dirname, 'ZhuChiRen.md'));
 export const PROMPT_UnderCover = readTextFile(path.join(__dirname, 'WoDi.md'));
 export const PROMPT_Commoner = readTextFile(path.join(__dirname, 'PingMin.md'));
-export const PROMPT_DescribeYourWord =`第【round】轮 【描述阶段】，现在轮到你描述，请你现在对你分配到的词“【词】”进行描述，避免说出"【词】"，你说的每一句话都不可以包含"【词】"，如果万不得已必须要提到“【词】”则用“我这个词”代替。注意：千万不要流露出内心想法，能说出来的必须是在这场游戏中可以公开讲的内容。回复格式要求：只要回复你的描述短语，不要有任何多余内容。短语不超过10个字，不要和已有描述重复。`;
+export const PROMPT_DescribeYourWord =`第【round】轮 【描述阶段】，现在轮到你描述，请你现在从【角度】角度对你分配到的词“【词】”进行描述，避免说出"【词】"，你说的每一句话都不可以包含"【词】"，如果万不得已必须要提到“【词】”则用“我这个词”代替。注意：千万不要流露出内心想法，能说出来的必须是在这场游戏中可以公开讲的内容。回复格式要求：只要回复你的描述短语，不要有任何多余内容。短语不超过10个字，不要和已有描述重复。`;
 export const PROMPT_Vote =`第【round】轮 【投票阶段】，现在轮到你投票。请你投票给你认为最有可能是卧底的玩家号码。你说的每一句话都不可以包含"【词】"。因为你想要活到最后，所以不可以投票给自己。回复格式要求：以json格式回复，格式为：{"voteToPlayer":number,"reason":string}，例如：{"voteToPlayer":1,"reason":"理由"}。`;
 export const PROMPT_Vote_UnderCover =`第【round】轮 【投票阶段】，现在轮到你投票。因为你是卧底，所以选择看起来最容易被怀疑的玩家，转移注意力。因为你想要活到最后，所以不可以投票给自己。你说的每一句话都不可以包含"【词】"。回复格式要求：以json格式回复，格式为：{"voteToPlayer":number,"reason":string}，例如：{"voteToPlayer":1,"reason":"理由"}。`;
 export const PROMPT_WORDS = readTextFile(path.join(__dirname, 'words.txt')).trim().split("\n").map((item)=>item.split(","));
+
+export const DESCRIBE_ANGLE = [
+    "外观特征",
+    "位置特征",
+    "本质属性",
+    "组成结构",
+    "实际用途",
+    "使用场景",
+    "相关动作",
+    "相关感受",
+    "近义反义",
+    "文化联想",
+    "个人经历",
+    "大众印象"
+];
