@@ -144,7 +144,7 @@ export default class GameManager {
         // 开始 按序号描述
         // 对玩家，发送msg；对AI，追加aimessage ； 包括自己
         const content = "现在进入第" + room.round + "轮\n 【描述阶段】，开始。";
-        const voice = (await VoiceManager.getInstance().synthesize("游戏开始"));
+        const voice = (await VoiceManager.getInstance().synthesize(content));
         this.broadcastToRoom(room, -1, content, conn,0,voice);
     }
 
@@ -180,7 +180,7 @@ export default class GameManager {
         // 对玩家，发送msg；对AI，追加aimessage ； 包括自己
         // this.broadcastToRoom(room, -1, messageContent, conn);
         // 改成：只发给玩家
-        await conn.sendMsg("Chat", {content: messageContent, time: new Date(),});
+        await conn.sendMsg("Chat", {content: messageContent, time: new Date(),senderId:player.number, voice:null});
         //计票
         RoomManager.getInstance().vote(room,voteToPlayer);
         //标记玩家已完成输入

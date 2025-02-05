@@ -29,6 +29,24 @@ export const Chatroom = (props: {}) => {
         setIsGameStarted(true);
     }
 
+    // 音频播放队列
+    const audioQueue = useRef<{ blob: Blob, audio: HTMLAudioElement }[]>([]);
+    // 当前正在播放的音频
+    const currentAudio = useRef<HTMLAudioElement | null>(null);
+    // 播放音频队列中的下一个音频
+    const playNextAudio = () => {
+        if (audioQueue.current.length > 0) {
+            const nextAudio = audioQueue.current.shift();
+            if (nextAudio) {
+                currentAudio.current = nextAudio.audio;
+                currentAudio.current.play();
+                currentAudio.current.onended = playNextAudio;
+            }
+        } else {
+            currentAudio.current = null;
+        }
+    };
+
     // on mounted
     useEffect(() => {
         // Connect at startup
@@ -43,12 +61,12 @@ export const Chatroom = (props: {}) => {
             setList(oldList => [...oldList, v]);
             if ( v.voice ) {
                 // 将音频数据转换为Blob对象
-                console.log("index//",v.voice);
                 const blob = new Blob([v.voice], { type: 'audio/wav' });
                 const audio = new Audio(URL.createObjectURL(blob));
-                audio.play();
-            }else{
-                console.log("index// no voice");
+                audioQueue.current.push({ blob, audio });
+                if (!currentAudio.current) {
+                    playNextAudio();
+                }
             }
         })
         client.listenMsg('GameStarted', v => {

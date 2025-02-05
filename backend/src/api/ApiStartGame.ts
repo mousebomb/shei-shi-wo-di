@@ -42,6 +42,13 @@ export default async function (call: ApiCall<ReqStartGame, ResStartGame>) {
             }
         })
     });
+    const content = "游戏开始，你的词是："+room.players[room.humanPlayer-1].word;
+    await call.conn.sendMsg("Chat",{
+        content : content,
+        time: new Date(),
+        senderId : 0,
+        voice : await VoiceManager.getInstance().synthesize(content)
+    })
     // 开始游戏一轮
     await GameManager.getInstance().gameNext(room,call.conn);
 
