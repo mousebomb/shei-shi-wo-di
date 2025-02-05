@@ -8,9 +8,12 @@
 
 方案2: 用deepseek R1 本地部署 + CosyVoice 本地部署。
 
-后来发现R1思维模式不适合本地部署玩这游戏，因为它每次输出tokens太多了，会需要等待更久。
+后来发现R1思维模式不适合本地部署玩这游戏，因为它每次输出tokens太多了，会需要等待更久。就换成千问14b的模型了，32b的效果会好一些但是速度略慢。
 
 
+## 效果截图
+
+![screenshot](README.assets/SCR-20250205-neen.png)
 
 ## LM Studio接入
 
