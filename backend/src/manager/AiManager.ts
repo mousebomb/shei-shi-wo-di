@@ -9,7 +9,7 @@ import {
 import axios from 'axios';
 import {RoomVO} from "../vo/RoomVO";
 import PlayerVO, {Identity} from "../vo/PlayerVO";
-import {LLM_API, LLM_LOG_V, LLM_MODEL} from "../constants";
+import {LLM_API, LLM_API_KEY, LLM_LOG_V, LLM_MODEL} from "../constants";
 
 // 定义请求的 URL
 const url = LLM_API;
@@ -17,6 +17,7 @@ const url = LLM_API;
 // 定义请求的 headers
 const headers = {
     'Content-Type': 'application/json',
+    'Authorization': `Bearer ${LLM_API_KEY}`,
 };
 
 
@@ -189,7 +190,7 @@ export class AiManager {
                 model: LLM_MODEL,
                 messages: messages,
                 temperature: 0.7,
-                max_tokens: -1,
+                // max_tokens: -1,
                 stream: false,
             };
             if(LLM_LOG_V) {
