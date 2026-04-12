@@ -1,4 +1,5 @@
 import {Message, Roles} from "../manager/AiManager";
+import {Persona} from "../constants/personas";
 
 export default class PlayerVO{
     // 身份 0 平民 1 卧底
@@ -9,10 +10,8 @@ export default class PlayerVO{
     number: number = 0;
     // 词语
     word: string = "";
-    // // 各轮描述
-    // desc: string[] = [];
-    // // 投票前按顺序进行的发言
-    // speak: string[] = [];
+    // AI 人格（仅AI玩家有值）
+    persona?: Persona;
     // 当前是否是AI
     isAi: boolean = false;
 

@@ -2,6 +2,7 @@ import {RoomVO} from "../vo/RoomVO";
 import PlayerVO, {Identity} from "../vo/PlayerVO";
 import {AiManager} from "./AiManager";
 import {AiPlayerNames} from "../constants";
+import {selectRandomPersonas} from "../constants/personas";
 
 export class RoomManager {
     private static instance: RoomManager;
@@ -31,7 +32,9 @@ export class RoomManager {
         room.words = words;
 
         const playerNum = AiPlayerNames.length;
-        //创建5个AI玩家和1个人类玩家，先全部设置为统一样子：平民、AI、未出局
+        // 为AI玩家随机分配不重复的人格
+        const personas = selectRandomPersonas(playerNum);
+        //创建AI玩家和人类玩家，先全部设置为统一样子：平民、AI、未出局
         for (let i = 0; i < playerNum; i++) {
             const player = new PlayerVO();
             player.identity = Identity.commoner;
@@ -40,8 +43,7 @@ export class RoomManager {
             player.isAi = true;
             player.dead = false;
             player.word = words[0];
-            // player.desc = [];
-            // player.speak = [];
+            player.persona = personas[i];
             room.players.push(player);
         }
         // 随机决定人类玩家的编号
@@ -49,6 +51,7 @@ export class RoomManager {
         //1个人类玩家的字段覆盖
         room.players[humanNumber - 1].isAi = false;
         room.players[humanNumber - 1].name = "桂花糕";
+        room.players[humanNumber - 1].persona = undefined;
 
         // 随机决定卧底玩家的编号
         const undercoverNumber = Math.floor(Math.random() * playerNum) + 1;

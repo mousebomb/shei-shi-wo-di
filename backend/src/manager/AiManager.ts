@@ -1,11 +1,14 @@
 import {
-    DESCRIBE_ANGLE,
-    PROMPT_Commoner,
+    PROMPT_COMMONER_STRATEGY,
     PROMPT_DescribeYourWord,
     PROMPT_GAME_RULES,
-    PROMPT_UnderCover, PROMPT_Vote, PROMPT_Vote_UnderCover,
+    PROMPT_PERSONA_SYSTEM,
+    PROMPT_UNDERCOVER_STRATEGY,
+    PROMPT_Vote,
+    PROMPT_Vote_UnderCover,
     PROMPT_ZhuChiRen
 } from "../constants/prompts";
+import {getDescribeLengthHint} from "../constants/personas";
 import axios from 'axios';
 import {RoomVO} from "../vo/RoomVO";
 import PlayerVO, {Identity} from "../vo/PlayerVO";
@@ -34,51 +37,71 @@ export class AiManager {
         return AiManager.instance;
     }
 
-    // 开始游戏时，智能体的初始化
+    // 开始游戏时，智能体的初始化（人格驱动版）
     async agentInit (room:RoomVO,currentPlayer : number){
         const player = room.players[currentPlayer-1];
-        player.messages = [
-        ];
-        //替换角色描述
-        let content="";
-        if ( player.identity == Identity.commoner)
-        {
-            content=PROMPT_Commoner;
-        }else if (player.identity == Identity.undercover)
-        {
-            content=PROMPT_UnderCover;
+        player.messages = [];
+
+        // 根据身份选择策略片段
+        let identityStrategy = "";
+        if (player.identity == Identity.commoner) {
+            identityStrategy = PROMPT_COMMONER_STRATEGY;
+        } else if (player.identity == Identity.undercover) {
+            identityStrategy = PROMPT_UNDERCOVER_STRATEGY;
         }
-        content=content.replace('【名字】',player.getFullName());
-        content=content.replace(/【词】/g,player.word);
-        //其他人的名字
+        // 身份策略中的【词】替换
+        identityStrategy = identityStrategy.replace(/【词】/g, player.word);
+
+        // 构建系统提示词：人格定义 + 身份策略 + 游戏规则
+        let content = PROMPT_PERSONA_SYSTEM;
+        content = content.replace('【名字】', player.getFullName());
+        content = content.replace(/【词】/g, player.word);
+
+        // 其他人的名字
         let othersNames = "";
         for (let i = 0; i < room.players.length; i++) {
             if (i !== currentPlayer-1) {
                 othersNames += room.players[i].getFullName() + ',';
             }
         }
-        content=content.replace('【其他人的名字】',othersNames.substring(0, othersNames.length - 1));
-        player.messages.push({role: Roles.system, content: content+'\n\n'+PROMPT_GAME_RULES});
+        content = content.replace('【其他人的名字】', othersNames.substring(0, othersNames.length - 1));
 
+        // 填充人格相关占位符（AI玩家有 persona，人类玩家没有则用通用描述）
+        if (player.persona) {
+            content = content.replace('【人格描述】', player.persona.description);
+            content = content.replace('【描述策略】', player.persona.describeStrategy);
+            content = content.replace('【投票策略】', player.persona.voteStrategy);
+        } else {
+            // 人类玩家的初始化（不会真正用到，保留兼容性）
+            content = content.replace('【人格描述】', '你是一个普通玩家。');
+            content = content.replace('【描述策略】', '用你自己的方式描述。');
+            content = content.replace('【投票策略】', '投给你觉得可疑的人。');
+        }
 
+        // 填充身份策略
+        content = content.replace('【身份策略】', identityStrategy);
+
+        player.messages.push({role: Roles.system, content: content + '\n\n' + PROMPT_GAME_RULES});
     }
 
     //region 描述阶段
 
-    // 让玩家发言描述自己的词
+    // 让玩家发言描述自己的词（人格驱动版，移除硬编码角度）
     async agentDescribeWord(player: PlayerVO,round:number,order :number) {
         // 断言 player.messages.length>0
         if (player.messages.length == 0) {
             throw new Error("AiManager/agentDescribeWord player.messages.length == 0");
         }
-        // 构造消息
-        let content = PROMPT_DescribeYourWord.replace('【round】',round.toString());
-        content=content.replace('【order】',order.toString());
-        content=content.replace(/【词】/g,player.word);
-        // 随机选择一个角度
-        const angle = DESCRIBE_ANGLE[Math.floor(Math.random()*DESCRIBE_ANGLE.length)];
-        content=content.replace('【角度】',angle);
-        player.messages.push ({role: Roles.user, content: content});
+        // 构造描述提示词
+        let content = PROMPT_DescribeYourWord.replace('【round】', round.toString());
+        content = content.replace(/【词】/g, player.word);
+        // 根据人格的回复长度倾向填充长度要求
+        const lengthHint = player.persona
+            ? getDescribeLengthHint(player.persona.replyLength)
+            : '短语不超过10个字';
+        content = content.replace('【长度要求】', lengthHint);
+
+        player.messages.push({role: Roles.user, content: content});
         let respContent = await this.llmRequest(player.messages);
         // AI 总是时不时犯规，所以要做一次处理，如果暴露了自己的词，强行替换
         if (respContent.content.indexOf(player.word) !== -1) {
@@ -282,4 +305,3 @@ export enum Roles {
     user = 'user',
     assistant = 'assistant'
 }
-
