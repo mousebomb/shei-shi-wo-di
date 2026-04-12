@@ -15,9 +15,14 @@ export enum ErrorCode {
     NOT_LOGIN = "NOT_LOGIN",
 }
 
-export const LLM_MODEL = process.env.LLM_MODEL || 'doubao-seed-1-6-flash-250828';
-export const LLM_API = process.env.LLM_API || 'https://ark.cn-beijing.volces.com/api/v3/chat/completions';
-export const LLM_API_KEY = process.env.LLM_API_KEY || "";
+// 优先使用 OpenAI 兼容环境变量；若使用旧配置，则自动从 LLM_API 推导 baseURL
+const LEGACY_LLM_API = process.env.LLM_API;
+const OPENAI_BASE_URL = process.env.OPENAI_BASE_URL || process.env.LLM_BASE_URL;
+
+export const LLM_MODEL = process.env.LLM_MODEL || process.env.OPENAI_MODEL || 'MiniMax-M2.7';
+export const LLM_BASE_URL = OPENAI_BASE_URL
+    || (LEGACY_LLM_API ? LEGACY_LLM_API.replace(/\/chat\/completions\/?$/, '') : 'https://api.minimaxi.com/v1');
+export const LLM_API_KEY = process.env.OPENAI_API_KEY || process.env.LLM_API_KEY || "";
 export const LLM_LOG_V = process.env.LLM_LOG_V === 'true';
 
 export const AiPlayerNames = (process.env.AI_PLAYER_NAMES || '猴哥,八戒,吕布,曹操,关羽,刘备').split(',');

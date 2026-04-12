@@ -9,19 +9,15 @@ import {
     PROMPT_ZhuChiRen
 } from "../constants/prompts";
 import {getDescribeLengthHint} from "../constants/personas";
-import axios from 'axios';
+import OpenAI from 'openai';
 import {RoomVO} from "../vo/RoomVO";
 import PlayerVO, {Identity} from "../vo/PlayerVO";
-import {LLM_API, LLM_API_KEY, LLM_LOG_V, LLM_MODEL} from "../constants";
+import {LLM_API_KEY, LLM_BASE_URL, LLM_LOG_V, LLM_MODEL} from "../constants";
 
-// 定义请求的 URL
-const url = LLM_API;
-
-// 定义请求的 headers
-const headers = {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${LLM_API_KEY}`,
-};
+const openaiClient = new OpenAI({
+    apiKey: LLM_API_KEY,
+    baseURL: LLM_BASE_URL,
+});
 
 
 export class AiManager {
@@ -205,70 +201,49 @@ export class AiManager {
      * 调用大模型
      * @param messages 消息
      */
-    llmRequest(messages: Message[],):Promise<{raw:string,content:string}> {
-        return new Promise((resolve, reject) => {
-
-            // 定义请求的 body
-            const data = {
-                model: LLM_MODEL,
-                messages: messages,
-                temperature: 0.7,
-                // max_tokens: -1,
-                stream: false,
-            };
+    async llmRequest(messages: Message[]):Promise<{raw:string,content:string}> {
+        try {
             if(LLM_LOG_V) {
                 console.log("AiManager/AiManager/llmRequest", messages);
             }
 
-            // 发起 POST 请求
-            axios.post(url, data, {headers})
-                .then(response => {
-                    // 请求成功，打印响应数据
-                    // console.log('Response:', response.data as PredictionResponse);
-                    const respData = response.data as PredictionResponse;
-                    if (respData) {
-                        const raw = respData.choices[0].message.content;
-                        let content = raw;
-                        if ( content.length==0 )
-                        {
-                            // 大模型损坏
-                            reject('大模型服务损坏，返回空字符串');
-                        }
-                        if(LLM_LOG_V) {
-                            console.log("AiManager/AiManager/llmRequest->Resp Raw:",content);
-                        }
-                        // 剔除think部分，只要think之后的内容
-                        const thinkIndex = content.lastIndexOf('</think>');
-                        if(thinkIndex !== -1) {
-                            content = respData.choices[0].message.content.substring(thinkIndex + '</think>'.length);
-                        }
-                        // 剔除\n
-                        content = content.replace(/\n/g, '');
-                        // console.log("AiManager/AiManager/llmRequest->Resp:",content                        );
-                        resolve({raw,content});
-                    }
+            const respData = await openaiClient.chat.completions.create({
+                model: LLM_MODEL,
+                messages: messages,
+                temperature: 0.7,
+                stream: false,
+            });
 
-                })
-                .catch(error => {
-                    // 请求失败，打印错误信息
-                    if (error.response) {
-                        // 请求已发出，但服务器响应的状态码不在 2xx 范围内
-                        console.log('Error response data:', error.response.data);
-                        console.log('Error response status:', error.response.status);
-                        console.log('Error response headers:', error.response.headers);
-                        reject('Error response data:'+ error.response.data);
-                    } else if (error.request) {
-                        // 请求已发出，但没有收到响应
-                        console.log('No response received:', error.request);
-                        reject('No response received');
-                    } else {
-                        // 在设置请求时发生错误
-                        console.log('Error setting up the request:', error.message);
-                        reject('Error setting up the request:'+ error.message);
-                    }
-                });
+            const raw = respData.choices[0]?.message?.content || '';
+            let content = raw;
 
-        })
+            if (content.length === 0) {
+                // 大模型异常：返回空字符串
+                throw new Error('大模型服务损坏，返回空字符串');
+            }
+            if(LLM_LOG_V) {
+                console.log("AiManager/AiManager/llmRequest->Resp Raw:", content);
+            }
+
+            // 剔除 think 部分，只保留最终输出
+            const thinkIndex = content.lastIndexOf('</think>');
+            if(thinkIndex !== -1) {
+                content = content.substring(thinkIndex + '</think>'.length);
+            }
+            // 剔除换行，保持与旧逻辑一致
+            content = content.replace(/\n/g, '');
+            return {raw, content};
+        } catch (error: any) {
+            const status = error?.status;
+            const data = error?.error || error?.response?.data || error?.message;
+            if (status) {
+                console.log('Error response status:', status);
+                console.log('Error response data:', data);
+                throw new Error('Error response data:' + JSON.stringify(data));
+            }
+            console.log('Error setting up the request:', error?.message || error);
+            throw new Error('Error setting up the request:' + (error?.message || String(error)));
+        }
     }
 
     //endregion

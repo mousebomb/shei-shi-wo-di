@@ -35,12 +35,12 @@ export default class VoiceManager {
 
                 return uint8Array;
             } else {
-                LLM_LOG_V && console.error('音频合成失败: 服务器返回状态码', response.status);
+                // LLM_LOG_V && console.error('音频合成失败: 服务器返回状态码', response.status);
                 // throw new Error(`音频合成失败: 服务器返回状态码 ${response.status}`);
                 return null;
             }
         } catch (error) {
-            LLM_LOG_V && console.error('音频合成请求失败:', error);
+            // LLM_LOG_V && console.error('音频合成请求失败:', error);
             // throw error;
             return null;
         }
