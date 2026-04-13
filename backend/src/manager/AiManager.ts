@@ -9,7 +9,7 @@ import {getDescribeLengthHint} from "../constants/personas";
 import OpenAI from 'openai';
 import {RoomVO} from "../vo/RoomVO";
 import PlayerVO from "../vo/PlayerVO";
-import {LLM_API_KEY, LLM_BASE_URL, LLM_LOG_V, LLM_MODEL} from "../constants";
+import {LLM_API_KEY, LLM_BASE_URL, LLM_LOG_V, LLM_MODEL, LLM_RETRY_DELAYS_MS} from "../constants";
 
 const openaiClient = new OpenAI({
     apiKey: LLM_API_KEY,
@@ -186,48 +186,80 @@ export class AiManager {
      * @param messages 消息
      */
     async llmRequest(messages: Message[]):Promise<{raw:string,content:string}> {
-        try {
-            if(LLM_LOG_V) {
-                console.log("AiManager/AiManager/llmRequest", messages);
-            }
-
-            const respData = await openaiClient.chat.completions.create({
-                model: LLM_MODEL,
-                messages: messages,
-                temperature: 0.7,
-                stream: false,
-            });
-
-            const raw = respData.choices[0]?.message?.content || '';
-            let content = raw;
-
-            if (content.length === 0) {
-                // 大模型异常：返回空字符串
-                throw new Error('大模型服务损坏，返回空字符串');
-            }
-            if(LLM_LOG_V) {
-                console.log("AiManager/AiManager/llmRequest->Resp Raw:", content);
-            }
-
-            // 剔除 think 部分，只保留最终输出
-            const thinkIndex = content.lastIndexOf('</think>');
-            if(thinkIndex !== -1) {
-                content = content.substring(thinkIndex + '</think>'.length);
-            }
-            // 剔除换行，保持与旧逻辑一致
-            content = content.replace(/\n/g, '');
-            return {raw, content};
-        } catch (error: any) {
-            const status = error?.status;
-            const data = error?.error || error?.response?.data || error?.message;
-            if (status) {
-                console.log('Error response status:', status);
-                console.log('Error response data:', data);
-                throw new Error('Error response data:' + JSON.stringify(data));
-            }
-            console.log('Error setting up the request:', error?.message || error);
-            throw new Error('Error setting up the request:' + (error?.message || String(error)));
+        if(LLM_LOG_V) {
+            console.log("AiManager/AiManager/llmRequest", messages);
         }
+
+        for (let attempt = 0; attempt <= LLM_RETRY_DELAYS_MS.length; attempt++) {
+            try {
+                return await this.requestOnce(messages);
+            } catch (error: any) {
+                // 仅在服务临时过载时按配置延迟重试，其它错误立即抛出
+                const canRetry = this.isRetryableLlmError(error);
+                if (!canRetry || attempt >= LLM_RETRY_DELAYS_MS.length) {
+                    throw this.toLlmRequestError(error);
+                }
+
+                const delayMs = LLM_RETRY_DELAYS_MS[attempt];
+                console.log(`AiManager/AiManager/llmRequest retry ${attempt + 1}/${LLM_RETRY_DELAYS_MS.length} after ${delayMs}ms`);
+                await this.sleep(delayMs);
+            }
+        }
+
+        throw new Error('AiManager/AiManager/llmRequest unexpected flow');
+    }
+
+    private async requestOnce(messages: Message[]): Promise<{raw:string,content:string}> {
+        const respData = await openaiClient.chat.completions.create({
+            model: LLM_MODEL,
+            messages: messages,
+            temperature: 0.7,
+            stream: false,
+        });
+
+        const raw = respData.choices[0]?.message?.content || '';
+        let content = raw;
+
+        if (content.length === 0) {
+            // 大模型异常：返回空字符串
+            throw new Error('大模型服务损坏，返回空字符串');
+        }
+        if(LLM_LOG_V) {
+            console.log("AiManager/AiManager/llmRequest->Resp Raw:", content);
+        }
+
+        // 剔除 think 部分，只保留最终输出
+        const thinkIndex = content.lastIndexOf('</think>');
+        if(thinkIndex !== -1) {
+            content = content.substring(thinkIndex + '</think>'.length);
+        }
+        // 剔除换行，保持与旧逻辑一致
+        content = content.replace(/\n/g, '');
+        return {raw, content};
+    }
+
+    private isRetryableLlmError(error: any): boolean {
+        const status = String(error?.status ?? error?.response?.status ?? '');
+        const data = error?.error || error?.response?.data || {};
+        const type = data?.type;
+        const httpCode = String(data?.http_code ?? '');
+        return status === '529' || httpCode === '529' || type === 'overloaded_error';
+    }
+
+    private toLlmRequestError(error: any): Error {
+        const status = error?.status ?? error?.response?.status;
+        const data = error?.error || error?.response?.data || error?.message;
+        if (status) {
+            console.log('Error response status:', status);
+            console.log('Error response data:', data);
+            return new Error('Error response data:' + JSON.stringify(data));
+        }
+        console.log('Error setting up the request:', error?.message || error);
+        return new Error('Error setting up the request:' + (error?.message || String(error)));
+    }
+
+    private sleep(ms: number): Promise<void> {
+        return new Promise(resolve => setTimeout(resolve, ms));
     }
 
     //endregion

@@ -25,6 +25,22 @@ export const LLM_BASE_URL = OPENAI_BASE_URL
 export const LLM_API_KEY = process.env.OPENAI_API_KEY || process.env.LLM_API_KEY || "";
 export const LLM_LOG_V = process.env.LLM_LOG_V === 'true';
 
+const DEFAULT_LLM_RETRY_DELAYS_MS = [1000, 3000, 10000];
+
+function parseRetryDelays(raw: string | undefined): number[] {
+    if (!raw) {
+        return DEFAULT_LLM_RETRY_DELAYS_MS;
+    }
+    const delays = raw
+        .split(',')
+        .map(v => Number(v.trim()))
+        .filter(v => Number.isFinite(v) && v >= 0);
+    return delays.length > 0 ? delays : DEFAULT_LLM_RETRY_DELAYS_MS;
+}
+
+// LLM 过载重试延迟（毫秒），例如："1000,3000,10000"
+export const LLM_RETRY_DELAYS_MS = parseRetryDelays(process.env.LLM_RETRY_DELAYS_MS);
+
 export const AiPlayerNames = (process.env.AI_PLAYER_NAMES || '猴哥,八戒,吕布,曹操,关羽,刘备').split(',');
 
 export const CosyVoice_API = process.env.COSYVOICE_API || 'http://192.168.50.8:5000/synthesize';
