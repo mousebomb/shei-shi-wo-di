@@ -11,7 +11,7 @@
     "proto": "tsrpc-cli proto",
     "sync": "tsrpc-cli sync",
     "api": "tsrpc-cli api",
-    "gen-voicebox-api": "npx openapi-typescript-codegen -i http://127.0.0.1:17493/openapi.json -o src/voicebox"
+    "gen-voicebox-api": "npx openapi-typescript-codegen -i http://127.0.0.1:17493/openapi.json -o src/voicebox --request ./mbtools/request.ts.template"
   },
   "devDependencies": {
     "@types/mocha": "^8.2.3",
