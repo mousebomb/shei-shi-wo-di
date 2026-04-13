@@ -18,7 +18,7 @@
   },
   "scripts": {
     "dev": "craco --openssl-legacy-provider  start",
-    "build": "craco build"
+    "build": "craco --openssl-legacy-provider build"
   },
   "eslintConfig": {
     "extends": [
