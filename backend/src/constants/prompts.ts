@@ -17,6 +17,7 @@ function readTextFile(filePath: string): string {
 export const PROMPT_GAME_RULES = `谁是卧底游戏规则：
 - 你被分配了一个词语，不能在对话中说出这个词
 - 你被分配到词语的类型（平民词或卧底词）会影响你的目标和策略，但你不知道其他人的词是什么
+- 不要预设自己的身份结论，请根据每轮公开信息动态判断局势，并选择更有利于自己存活和获胜的发言与投票策略
 - 游戏分为【描述阶段】和【投票阶段】
   - 【描述阶段】：玩家依次用短语或形容词来描述自己拿到的词语，但在游戏过程中不能在对话中使用这个词语，且不能重复。
   - 【投票阶段】：每轮描述结束后，大家投票选出怀疑是卧底的人，得票最多的人出局。
@@ -41,7 +42,6 @@ export const PROMPT_ZhuChiRen = readTextFile(path.join(__dirname, 'ZhuChiRen.md'
  *  【人格描述】     → persona.description
  *  【描述策略】     → persona.describeStrategy
  *  【投票策略】     → persona.voteStrategy
- *  【身份策略】     → PROMPT_COMMONER_STRATEGY 或 PROMPT_UNDERCOVER_STRATEGY
  */
 export const PROMPT_PERSONA_SYSTEM = `# 角色定位
 - 你是【名字】
@@ -55,25 +55,7 @@ export const PROMPT_PERSONA_SYSTEM = `# 角色定位
 【描述策略】
 
 # 投票策略
-【投票策略】
-
-【身份策略】`;
-
-// ===================== 身份策略 =====================
-
-/** 平民身份策略片段（替换到【身份策略】占位符） */
-export const PROMPT_COMMONER_STRATEGY = `# 内心策略（不可对外透露）
-- 你是平民，你的目标是找出卧底并投票淘汰他
-- 你的描述应该符合你的词语"【词】"，但尽量不提及该词独特的特征，以免被卧底推测
-- 投票时分析其他玩家描述的特征，找出与你的词语特征不符的地方
-- 不要告诉别人你的词语和身份`;
-
-/** 卧底身份策略片段（替换到【身份策略】占位符） */
-export const PROMPT_UNDERCOVER_STRATEGY = `# 内心策略（不可对外透露）
-- 你发现你和其他人的描述似乎有所不同，这表明你是卧底，你的目标是隐藏身份活到最后
-- 仔细观察其他玩家的描述，推测平民的词语是什么，围绕你的词和平民词的共同特征来描述，避免暴露
-- 投票时选择看起来最容易被怀疑的玩家，转移注意力
-- 引导大家怀疑其他人，不要暴露你的词语"【词】"和身份`;
+【投票策略】`;
 
 // ===================== 描述阶段 =====================
 
@@ -94,8 +76,6 @@ export const PROMPT_DescribeYourWord = `第【round】轮 【描述阶段】，�
 /** 投票提示词 - 平民版。占位符：【round】【词】 */
 export const PROMPT_Vote = `第【round】轮 【投票阶段】，现在轮到你投票。请投票给你认为最有可能是卧底的玩家号码。你说的每一句话都不可以包含"【词】"。因为你想要活到最后，所以不可以投票给自己。回复格式要求：以json格式回复，格式为：{"voteToPlayer":number,"reason":string}，例如：{"voteToPlayer":1,"reason":"理由"}。`;
 
-/** 投票提示词 - 卧底版。占位符：【round】【词】 */
-export const PROMPT_Vote_UnderCover = `第【round】轮 【投票阶段】，现在轮到你投票。因为你是卧底，所以选择看起来最容易被怀疑的玩家，转移注意力。因为你想要活到最后，所以不可以投票给自己。你说的每一句话都不可以包含"【词】"。回复格式要求：以json格式回复，格式为：{"voteToPlayer":number,"reason":string}，例如：{"voteToPlayer":1,"reason":"理由"}。`;
 
 // ===================== 词库 =====================
 

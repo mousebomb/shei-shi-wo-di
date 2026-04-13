@@ -1,17 +1,14 @@
 import {
-    PROMPT_COMMONER_STRATEGY,
     PROMPT_DescribeYourWord,
     PROMPT_GAME_RULES,
     PROMPT_PERSONA_SYSTEM,
-    PROMPT_UNDERCOVER_STRATEGY,
     PROMPT_Vote,
-    PROMPT_Vote_UnderCover,
     PROMPT_ZhuChiRen
 } from "../constants/prompts";
 import {getDescribeLengthHint} from "../constants/personas";
 import OpenAI from 'openai';
 import {RoomVO} from "../vo/RoomVO";
-import PlayerVO, {Identity} from "../vo/PlayerVO";
+import PlayerVO from "../vo/PlayerVO";
 import {LLM_API_KEY, LLM_BASE_URL, LLM_LOG_V, LLM_MODEL} from "../constants";
 
 const openaiClient = new OpenAI({
@@ -38,16 +35,6 @@ export class AiManager {
         const player = room.players[currentPlayer-1];
         player.messages = [];
 
-        // 根据身份选择策略片段
-        let identityStrategy = "";
-        if (player.identity == Identity.commoner) {
-            identityStrategy = PROMPT_COMMONER_STRATEGY;
-        } else if (player.identity == Identity.undercover) {
-            identityStrategy = PROMPT_UNDERCOVER_STRATEGY;
-        }
-        // 身份策略中的【词】替换
-        identityStrategy = identityStrategy.replace(/【词】/g, player.word);
-
         // 构建系统提示词：人格定义 + 身份策略 + 游戏规则
         let content = PROMPT_PERSONA_SYSTEM;
         content = content.replace('【名字】', player.getFullName());
@@ -73,9 +60,6 @@ export class AiManager {
             content = content.replace('【描述策略】', '用你自己的方式描述。');
             content = content.replace('【投票策略】', '投给你觉得可疑的人。');
         }
-
-        // 填充身份策略
-        content = content.replace('【身份策略】', identityStrategy);
 
         player.messages.push({role: Roles.system, content: content + '\n\n' + PROMPT_GAME_RULES});
     }
@@ -121,7 +105,7 @@ export class AiManager {
     // 让玩家投票
     async agentVote(player: PlayerVO, room:RoomVO) {
         // 构造消息
-        let content = player.identity== Identity.undercover?PROMPT_Vote_UnderCover:PROMPT_Vote;
+        let content = PROMPT_Vote;
         content=content.replace('【round】',room.round.toString());
         content = content.replace('【词】',player.word);
         // player.messages.push({role: Roles.user, content: content});
