@@ -720,6 +720,9 @@ export class DefaultService {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/generate/stream',
+            headers: {
+                Accept: 'audio/wav',
+            },
             body: requestBody,
             mediaType: 'application/json',
             errors: {

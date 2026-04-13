@@ -191,6 +191,24 @@ export const getRequestBody = (options: ApiRequestOptions): any => {
     return undefined;
 };
 
+const isBinaryAccept = (accept?: string): boolean => {
+    if (!accept) {
+        return false;
+    }
+    const value = accept.toLowerCase();
+    return (
+        value.includes('audio/') ||
+        value.includes('video/') ||
+        value.includes('image/') ||
+        value.includes('application/octet-stream')
+    );
+};
+
+const getAxiosResponseType = (headers: Record<string, string>): 'arraybuffer' | 'json' => {
+    const accept = headers['Accept'] || headers['accept'];
+    return isBinaryAccept(accept) ? 'arraybuffer' : 'json';
+};
+
 /**
  * 发送 HTTP 请求（axios 实现，兼容 Node.js）
  * validateStatus 设为始终返回 true，由 catchErrorCodes 统一处理错误状态码
@@ -213,6 +231,7 @@ export const sendRequest = async (
         method: options.method,
         headers,
         data: body ?? formData,
+        responseType: getAxiosResponseType(headers),
         cancelToken: source.token,
         withCredentials: config.WITH_CREDENTIALS,
         // 不让 axios 自动抛出 HTTP 错误，交由 catchErrorCodes 处理
@@ -233,7 +252,29 @@ export const getResponseHeader = (response: AxiosResponse, responseHeader?: stri
 
 export const getResponseBody = (response: AxiosResponse): any => {
     if (response.status !== 204) {
-        return response.data;
+        const data = response.data;
+        const rawContentType = response.headers['content-type'];
+        const contentType = (Array.isArray(rawContentType) ? rawContentType[0] : rawContentType || '').toLowerCase();
+
+        if (Buffer.isBuffer(data)) {
+            if (contentType.startsWith('application/json') || contentType.startsWith('application/problem+json')) {
+                try {
+                    return JSON.parse(data.toString('utf-8'));
+                } catch {
+                    return data.toString('utf-8');
+                }
+            }
+            if (contentType.startsWith('text/')) {
+                return data.toString('utf-8');
+            }
+            return new Uint8Array(data);
+        }
+
+        if (data instanceof ArrayBuffer) {
+            return new Uint8Array(data);
+        }
+
+        return data;
     }
     return undefined;
 };
