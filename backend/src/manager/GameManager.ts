@@ -178,9 +178,9 @@ export default class GameManager {
         // 广播同步给所有player的历史消息 包括自己
         const messageContent = player.getFullName() + ":投票给" + voteToPlayer + "，理由:\"" + reason + "\"。";
         // 对玩家，发送msg；对AI，追加aimessage ； 包括自己
-        // this.broadcastToRoom(room, -1, messageContent, conn);
-        // 改成：只发给玩家
-        await conn.sendMsg("Chat", {content: messageContent, time: new Date(),senderId:player.number, voice:null});
+        this.broadcastToRoom(room, -1, messageContent, conn,player.number,null);
+        // // 只发给玩家
+        // await conn.sendMsg("Chat", {content: messageContent, time: new Date(),senderId:player.number, voice:null});
         //计票
         RoomManager.getInstance().vote(room,voteToPlayer);
         //标记玩家已完成输入
@@ -259,11 +259,11 @@ export default class GameManager {
             RoomManager.getInstance().vote(room,voteContent.voteToPlayer);
             // 广播同步给所有player的历史消息
             const messageContent = player.getFullName() + ":投票给" + room.players[voteContent.voteToPlayer - 1].getFullName() + "，理由:\"" + voteContent.reason + "\"。";
-            // // 对玩家，发送msg；对AI，追加aimessage ； 包括AI自己；因为虽然自己的已经在agentVote中记录到自己的messages中了，但记录计票的文案有所不同
-            // this.broadcastToRoom(room, -1, messageContent, conn);
-            // 改成只发给玩家
+            // 对玩家，发送msg；对AI，追加aimessage ； 包括AI自己；因为虽然自己的已经在agentVote中记录到自己的messages中了，但记录计票的文案有所不同
             const voice = (await VoiceManager.getInstance().synthesize("投票给"+room.players[voteContent.voteToPlayer-1].getFullName() + "。" + voteContent.reason + "。"));
-            await conn.sendMsg("Chat", {content: messageContent, time: new Date(),senderId: player.number,voice});
+            this.broadcastToRoom(room, -1, messageContent, conn,player.number,voice);
+            // // 只发给玩家
+            // await conn.sendMsg("Chat", {content: messageContent, time: new Date(),senderId: player.number,voice});
             //标记玩家已完成输入
             room.currentPlayerInputing = false;
             room.currentPlayer++;
