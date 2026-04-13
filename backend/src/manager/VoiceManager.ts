@@ -1,16 +1,13 @@
-// 定义请求的 URL
-import {CosyVoice_API, LLM_LOG_V} from "../constants";
-import axios from "axios";
-import FormData from 'form-data';
-
-const url = CosyVoice_API;
-
+import axios from 'axios';
+import { OpenAPI } from '../voicebox/core/OpenAPI';
+import { DefaultService } from '../voicebox/services/DefaultService';
+import { VOICEBOX_API, VOICEBOX_HOST_PROFILE_ID } from '../constants';
 
 export default class VoiceManager {
-    constructor() {
-    }
-
     private static instance: VoiceManager;
+    private initialized = false;
+
+    private constructor() {}
 
     public static getInstance(): VoiceManager {
         if (!VoiceManager.instance) {
@@ -19,29 +16,44 @@ export default class VoiceManager {
         return VoiceManager.instance;
     }
 
+    /** 初始化 voicebox SDK 的 base URL（只执行一次） */
+    private init() {
+        if (this.initialized) return;
+        OpenAPI.BASE = VOICEBOX_API;
+        this.initialized = true;
+    }
 
-    async synthesize(text: string): Promise<Uint8Array> {
+    /**
+     * 合成语音，返回音频二进制数据
+     * @param text 需要合成的文本
+     * @param profileId 声音 profile_id（留空时使用主持人默认音色）
+     */
+    async synthesize(text: string, profileId?: string): Promise<Uint8Array> {
+        this.init();
         try {
-            // 用axios请求cosyvoice 获得音频二进制数据
-            // 创建FormData对象
-            const formData = new FormData();
-            formData.append('text', text);
-
-            // 发送POST请求到Python服务器
-            const response = await axios.post(CosyVoice_API, formData, {responseType: 'arraybuffer'});
-            if (response.status === 200) {
-                const audioBuffer = response.data;
-                const uint8Array = new Uint8Array(audioBuffer);
-
-                return uint8Array;
-            } else {
-                // LLM_LOG_V && console.error('音频合成失败: 服务器返回状态码', response.status);
-                // throw new Error(`音频合成失败: 服务器返回状态码 ${response.status}`);
+            const effectiveProfileId = profileId || VOICEBOX_HOST_PROFILE_ID;
+            // 未配置 profile_id 时跳过合成，避免接口报错
+            if (!effectiveProfileId) {
                 return null;
             }
+
+            // 调用 voicebox 生成语音，固定参数：中文、1.7B 模型、qwen 引擎
+            const resp = await DefaultService.generateSpeechGeneratePost({
+                profile_id: effectiveProfileId,
+                text,
+                language: 'zh',
+                model_size: '1.7B',
+                engine: 'qwen',
+            });
+
+            // 通过 generation id 拉取音频二进制数据
+            const audioResp = await axios.get(
+                `${VOICEBOX_API}/audio/${resp.id}`,
+                { responseType: 'arraybuffer' }
+            );
+            return new Uint8Array(audioResp.data);
         } catch (error) {
-            // LLM_LOG_V && console.error('音频合成请求失败:', error);
-            // throw error;
+            console.error('VoiceManager: 语音合成失败', error);
             return null;
         }
     }

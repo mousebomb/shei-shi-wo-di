@@ -10,7 +10,8 @@
     "test": "mocha test/**/*.test.ts",
     "proto": "tsrpc-cli proto",
     "sync": "tsrpc-cli sync",
-    "api": "tsrpc-cli api"
+    "api": "tsrpc-cli api",
+    "gen-voicebox-api": "npx openapi-typescript-codegen -i http://127.0.0.1:17493/openapi.json -o src/voicebox"
   },
   "devDependencies": {
     "@types/mocha": "^8.2.3",

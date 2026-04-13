@@ -43,4 +43,7 @@ export const LLM_RETRY_DELAYS_MS = parseRetryDelays(process.env.LLM_RETRY_DELAYS
 
 export const AiPlayerNames = (process.env.AI_PLAYER_NAMES || '猴哥,八戒,吕布,曹操,关羽,刘备').split(',');
 
-export const CosyVoice_API = process.env.COSYVOICE_API || 'http://192.168.50.8:5000/synthesize';
+// Voicebox TTS 配置
+export const VOICEBOX_API = process.env.VOICEBOX_API || 'http://localhost:8000';
+/** 主持人/系统播报用的默认声音 profile_id */
+export const VOICEBOX_HOST_PROFILE_ID = process.env.VOICEBOX_HOST_PROFILE_ID || '';
