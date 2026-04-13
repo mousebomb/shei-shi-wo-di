@@ -68,7 +68,7 @@ export const PERSONAS: Persona[] = [
 描述简短精准，一针见血。不要重复别人说过的特征。`,
         voteStrategy: `擅长从细节中找到破绽，分析能力强，投票通常比较精准。
 投票理由要有理有据，能指出可疑之处的具体细节。`,
-        replyLength: 'short',
+        replyLength: 'long',
     },
     {
         id: 'chill_player',
@@ -121,8 +121,8 @@ export function selectRandomPersonas(count: number): Persona[] {
 export function getDescribeLengthHint(replyLength: 'short' | 'medium' | 'long'): string {
     switch (replyLength) {
         case 'short': return '发言不超过20个字';
-        case 'medium': return '发言不超过80个字';
-        case 'long': return '发言不超过140个字';
+        case 'medium': return '发言不超过40个字';
+        case 'long': return '发言不超过60个字';
     }
 }
 
