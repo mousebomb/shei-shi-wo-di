@@ -1,13 +1,18 @@
-/* generated using openapi-typescript-codegen -- do no edit */
-/* istanbul ignore file */
-/* tslint:disable */
-/* eslint-disable */
+/**
+ * request.ts - Node.js 兼容版本
+ * 原版本由 openapi-typescript-codegen 生成，已适配 Node.js/浏览器通用环境
+ * 主要变更：使用 axios 替换浏览器原生 fetch / Headers / FormData / Blob API
+ */
+import axios from 'axios';
+import type { AxiosResponse, CancelTokenSource } from 'axios';
 import { ApiError } from './ApiError';
 import type { ApiRequestOptions } from './ApiRequestOptions';
 import type { ApiResult } from './ApiResult';
 import { CancelablePromise } from './CancelablePromise';
 import type { OnCancel } from './CancelablePromise';
 import type { OpenAPIConfig } from './OpenAPI';
+
+// ---- 通用工具函数 ----
 
 export const isDefined = <T>(value: T | null | undefined): value is Exclude<T, null | undefined> => {
     return value !== undefined && value !== null;
@@ -21,28 +26,35 @@ export const isStringWithValue = (value: any): value is string => {
     return isString(value) && value !== '';
 };
 
-export const isBlob = (value: any): value is Blob => {
+/**
+ * 检测 Blob/File 类型，兼容 Node.js（Buffer、Uint8Array）和浏览器（Blob、File）
+ */
+export const isBlob = (value: any): boolean => {
+    // Node.js Buffer / Uint8Array
+    if (Buffer.isBuffer(value) || value instanceof Uint8Array) return true;
+    // 浏览器原生 Blob / File
+    if (typeof Blob !== 'undefined' && value instanceof Blob) return true;
+    // duck-typing（兼容其他 Blob 实现）
     return (
         typeof value === 'object' &&
         typeof value.type === 'string' &&
-        typeof value.stream === 'function' &&
-        typeof value.arrayBuffer === 'function' &&
-        typeof value.constructor === 'function' &&
-        typeof value.constructor.name === 'string' &&
-        /^(Blob|File)$/.test(value.constructor.name) &&
-        /^(Blob|File)$/.test(value[Symbol.toStringTag])
+        typeof value.arrayBuffer === 'function'
     );
 };
 
-export const isFormData = (value: any): value is FormData => {
-    return value instanceof FormData;
+/**
+ * 检测 FormData，兼容浏览器原生和 form-data 库（有 getHeaders 方法）
+ */
+export const isFormData = (value: any): boolean => {
+    if (typeof FormData !== 'undefined' && value instanceof FormData) return true;
+    // form-data 包的特征方法
+    return typeof value === 'object' && typeof value.getHeaders === 'function';
 };
 
 export const base64 = (str: string): string => {
     try {
         return btoa(str);
-    } catch (err) {
-        // @ts-ignore
+    } catch {
         return Buffer.from(str).toString('base64');
     }
 };
@@ -57,28 +69,18 @@ export const getQueryString = (params: Record<string, any>): string => {
     const process = (key: string, value: any) => {
         if (isDefined(value)) {
             if (Array.isArray(value)) {
-                value.forEach(v => {
-                    process(key, v);
-                });
+                value.forEach(v => process(key, v));
             } else if (typeof value === 'object') {
-                Object.entries(value).forEach(([k, v]) => {
-                    process(`${key}[${k}]`, v);
-                });
+                Object.entries(value).forEach(([k, v]) => process(`${key}[${k}]`, v));
             } else {
                 append(key, value);
             }
         }
     };
 
-    Object.entries(params).forEach(([key, value]) => {
-        process(key, value);
-    });
+    Object.entries(params).forEach(([key, value]) => process(key, value));
 
-    if (qs.length > 0) {
-        return `?${qs.join('&')}`;
-    }
-
-    return '';
+    return qs.length > 0 ? `?${qs.join('&')}` : '';
 };
 
 const getUrl = (config: OpenAPIConfig, options: ApiRequestOptions): string => {
@@ -94,10 +96,7 @@ const getUrl = (config: OpenAPIConfig, options: ApiRequestOptions): string => {
         });
 
     const url = `${config.BASE}${path}`;
-    if (options.query) {
-        return `${url}${getQueryString(options.query)}`;
-    }
-    return url;
+    return options.query ? `${url}${getQueryString(options.query)}` : url;
 };
 
 export const getFormData = (options: ApiRequestOptions): FormData | undefined => {
@@ -136,7 +135,10 @@ export const resolve = async <T>(options: ApiRequestOptions, resolver?: T | Reso
     return resolver;
 };
 
-export const getHeaders = async (config: OpenAPIConfig, options: ApiRequestOptions): Promise<Headers> => {
+/**
+ * 构建请求头，返回普通对象（兼容 axios，不依赖浏览器 Headers 类）
+ */
+export const getHeaders = async (config: OpenAPIConfig, options: ApiRequestOptions): Promise<Record<string, string>> => {
     const [token, username, password, additionalHeaders] = await Promise.all([
         resolve(options, config.TOKEN),
         resolve(options, config.USERNAME),
@@ -150,10 +152,7 @@ export const getHeaders = async (config: OpenAPIConfig, options: ApiRequestOptio
         ...options.headers,
     })
         .filter(([_, value]) => isDefined(value))
-        .reduce((headers, [key, value]) => ({
-            ...headers,
-            [key]: String(value),
-        }), {} as Record<string, string>);
+        .reduce((acc, [key, value]) => ({ ...acc, [key]: String(value) }), {} as Record<string, string>);
 
     if (isStringWithValue(token)) {
         headers['Authorization'] = `Bearer ${token}`;
@@ -168,7 +167,7 @@ export const getHeaders = async (config: OpenAPIConfig, options: ApiRequestOptio
         if (options.mediaType) {
             headers['Content-Type'] = options.mediaType;
         } else if (isBlob(options.body)) {
-            headers['Content-Type'] = options.body.type || 'application/octet-stream';
+            headers['Content-Type'] = (options.body as any).type || 'application/octet-stream';
         } else if (isString(options.body)) {
             headers['Content-Type'] = 'text/plain';
         } else if (!isFormData(options.body)) {
@@ -176,13 +175,13 @@ export const getHeaders = async (config: OpenAPIConfig, options: ApiRequestOptio
         }
     }
 
-    return new Headers(headers);
+    return headers;
 };
 
 export const getRequestBody = (options: ApiRequestOptions): any => {
     if (options.body !== undefined) {
         if (options.mediaType?.includes('/json')) {
-            return JSON.stringify(options.body)
+            return JSON.stringify(options.body);
         } else if (isString(options.body) || isBlob(options.body) || isFormData(options.body)) {
             return options.body;
         } else {
@@ -192,36 +191,39 @@ export const getRequestBody = (options: ApiRequestOptions): any => {
     return undefined;
 };
 
+/**
+ * 发送 HTTP 请求（axios 实现，兼容 Node.js）
+ * validateStatus 设为始终返回 true，由 catchErrorCodes 统一处理错误状态码
+ */
 export const sendRequest = async (
     config: OpenAPIConfig,
     options: ApiRequestOptions,
     url: string,
     body: any,
-    formData: FormData | undefined,
-    headers: Headers,
+    formData: any | undefined,
+    headers: Record<string, string>,
     onCancel: OnCancel
-): Promise<Response> => {
-    const controller = new AbortController();
+): Promise<AxiosResponse> => {
+    const source: CancelTokenSource = axios.CancelToken.source();
 
-    const request: RequestInit = {
-        headers,
-        body: body ?? formData,
+    onCancel(() => source.cancel('Request cancelled'));
+
+    return await axios.request({
+        url,
         method: options.method,
-        signal: controller.signal,
-    };
-
-    if (config.WITH_CREDENTIALS) {
-        request.credentials = config.CREDENTIALS;
-    }
-
-    onCancel(() => controller.abort());
-
-    return await fetch(url, request);
+        headers,
+        data: body ?? formData,
+        cancelToken: source.token,
+        withCredentials: config.WITH_CREDENTIALS,
+        // 不让 axios 自动抛出 HTTP 错误，交由 catchErrorCodes 处理
+        validateStatus: () => true,
+    });
 };
 
-export const getResponseHeader = (response: Response, responseHeader?: string): string | undefined => {
+export const getResponseHeader = (response: AxiosResponse, responseHeader?: string): string | undefined => {
     if (responseHeader) {
-        const content = response.headers.get(responseHeader);
+        // axios headers 的 key 均为小写
+        const content = response.headers[responseHeader.toLowerCase()];
         if (isString(content)) {
             return content;
         }
@@ -229,22 +231,9 @@ export const getResponseHeader = (response: Response, responseHeader?: string): 
     return undefined;
 };
 
-export const getResponseBody = async (response: Response): Promise<any> => {
+export const getResponseBody = (response: AxiosResponse): any => {
     if (response.status !== 204) {
-        try {
-            const contentType = response.headers.get('Content-Type');
-            if (contentType) {
-                const jsonTypes = ['application/json', 'application/problem+json']
-                const isJSON = jsonTypes.some(type => contentType.toLowerCase().startsWith(type));
-                if (isJSON) {
-                    return await response.json();
-                } else {
-                    return await response.text();
-                }
-            }
-        } catch (error) {
-            console.error(error);
-        }
+        return response.data;
     }
     return undefined;
 };
@@ -259,7 +248,7 @@ export const catchErrorCodes = (options: ApiRequestOptions, result: ApiResult): 
         502: 'Bad Gateway',
         503: 'Service Unavailable',
         ...options.errors,
-    }
+    };
 
     const error = errors[result.status];
     if (error) {
@@ -272,7 +261,7 @@ export const catchErrorCodes = (options: ApiRequestOptions, result: ApiResult): 
         const errorBody = (() => {
             try {
                 return JSON.stringify(result.body, null, 2);
-            } catch (e) {
+            } catch {
                 return undefined;
             }
         })();
@@ -284,9 +273,9 @@ export const catchErrorCodes = (options: ApiRequestOptions, result: ApiResult): 
 };
 
 /**
- * Request method
- * @param config The OpenAPI configuration object
- * @param options The request options from the service
+ * 通用请求方法（Node.js 兼容版，基于 axios）
+ * @param config OpenAPI 配置对象
+ * @param options 请求选项
  * @returns CancelablePromise<T>
  * @throws ApiError
  */
@@ -300,19 +289,18 @@ export const request = <T>(config: OpenAPIConfig, options: ApiRequestOptions): C
 
             if (!onCancel.isCancelled) {
                 const response = await sendRequest(config, options, url, body, formData, headers, onCancel);
-                const responseBody = await getResponseBody(response);
+                const responseBody = getResponseBody(response);
                 const responseHeader = getResponseHeader(response, options.responseHeader);
 
                 const result: ApiResult = {
                     url,
-                    ok: response.ok,
+                    ok: response.status >= 200 && response.status < 300,
                     status: response.status,
                     statusText: response.statusText,
                     body: responseHeader ?? responseBody,
                 };
 
                 catchErrorCodes(options, result);
-
                 resolve(result.body);
             }
         } catch (error) {
