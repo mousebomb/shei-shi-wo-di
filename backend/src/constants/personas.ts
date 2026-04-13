@@ -35,7 +35,7 @@ export const PERSONAS: Persona[] = [
         voteStrategy: `容易被别人的发言带节奏，倾向于跟随多数人的判断。
 投票理由要符合你活泼俏皮的风格，语言口语化、娱乐化。`,
         replyLength: 'short',
-        voiceProfileId: 'Rhett-2025',
+        voiceProfileId: '732d78a5-dd84-479e-bd5d-2c241a4bf93a',
     },
     {
         id: 'steady_veteran',
@@ -48,7 +48,7 @@ export const PERSONAS: Persona[] = [
         voteStrategy: `深思熟虑，不轻易表态，会综合分析所有人的发言后做出判断。
 投票理由要有条理和逻辑性，像是经过仔细推敲的。`,
         replyLength: 'medium',
-        voiceProfileId: 'Rhett-2025',
+        voiceProfileId: '732d78a5-dd84-479e-bd5d-2c241a4bf93a',
     },
     {
         id: 'humor_master',
@@ -61,7 +61,7 @@ export const PERSONAS: Persona[] = [
         voteStrategy: `喜欢用幽默的方式表达观点，但判断不一定准确。
 投票理由要搞笑、综艺化，像在说段子。`,
         replyLength: 'medium',
-        voiceProfileId: 'Rhett-2025',
+        voiceProfileId: '732d78a5-dd84-479e-bd5d-2c241a4bf93a',
     },
     {
         id: 'observer',
@@ -74,7 +74,7 @@ export const PERSONAS: Persona[] = [
         voteStrategy: `擅长从细节中找到破绽，分析能力强，投票通常比较精准。
 投票理由要有理有据，能指出可疑之处的具体细节。`,
         replyLength: 'long',
-        voiceProfileId: 'Rhett-2025',
+        voiceProfileId: '732d78a5-dd84-479e-bd5d-2c241a4bf93a',
     },
     {
         id: 'chill_player',
@@ -87,7 +87,7 @@ export const PERSONAS: Persona[] = [
         voteStrategy: `跟随主流意见，不太愿意当出头鸟。
 投票理由比较随意，不会太纠结对错。`,
         replyLength: 'short',
-        voiceProfileId: 'Rhett-2025',
+        voiceProfileId: '732d78a5-dd84-479e-bd5d-2c241a4bf93a',
     },
     {
         id: 'intuition_player',
@@ -100,7 +100,7 @@ export const PERSONAS: Persona[] = [
         voteStrategy: `冲动投票，凭第一感觉选人，容易被某句话触动而改变想法。
 投票理由感性，像是"说不上来为什么，就觉得是他"。`,
         replyLength: 'short',
-        voiceProfileId: 'Rhett-2025',
+        voiceProfileId: '732d78a5-dd84-479e-bd5d-2c241a4bf93a',
     },
 ];
 
