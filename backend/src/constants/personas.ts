@@ -120,9 +120,9 @@ export function selectRandomPersonas(count: number): Persona[] {
  */
 export function getDescribeLengthHint(replyLength: 'short' | 'medium' | 'long'): string {
     switch (replyLength) {
-        case 'short': return '短语不超过10个字';
-        case 'medium': return '短语不超过15个字';
-        case 'long': return '短语不超过20个字';
+        case 'short': return '发言不超过20个字';
+        case 'medium': return '发言不超过80个字';
+        case 'long': return '发言不超过140个字';
     }
 }
 
