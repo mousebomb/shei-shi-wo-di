@@ -2,30 +2,50 @@
 
 ## 需求
 
-睿睿想玩谁是卧底总是凑不齐人， 我想帮她开发一个在家里能玩的，AI玩的自闭环的，鲁棒性好一点的，《谁是卧底》游戏机器人。 计划用Deepseek 部署在LMStudio + LMStudio的API，可以实现调用对话。然后可以写一个服务器端来驱动规则，我们几个人都可以玩。还需要寻找一个开源方案的配音AI来根据文本合成语音，扮演不同的机器人，每个机器人分配一个独特的嗓音。 服务端采用nodejs开发，为人类提供一个网页页面来为人类玩家分配各自的题目词，每个人独自看自己的界面，机器人不需要界面。
+睿睿想玩谁是卧底总是凑不齐人， 我想帮她开发一个在家里能玩的，AI玩的自闭环的，鲁棒性好一点的，《谁是卧底》游戏机器人。 游戏服务器驱动游戏规则，人类玩家通过网页参与，AI玩家由 LLM 驱动，每个 AI 角色绑定独立嗓音。
+
+服务端采用 nodejs 开发，为人类提供网页界面，机器人不需要界面。
 
 
 
-方案2: 用deepseek R1 本地部署 + CosyVoice 本地部署。
+# 运行
 
-后来发现R1思维模式不适合本地部署玩这游戏，因为它每次输出tokens太多了，会需要等待更久。就换成千问14b的模型了，32b的效果会好一些但是速度略慢。
+客户端: `cd frontend && npm run-script dev`
 
+服务端：`cd backend && npm run-script dev`
 
 ## 效果截图
 
 ![screenshot](README.assets/SCR-20250205-neen.png)
 
-## LM Studio接入
+## LLM接入
 
+直接使用OpenAI兼容接口，配置环境变量：
+
+```env
+OPENAI_BASE_URL=https://api.minimaxi.com/v1
+OPENAI_API_KEY=your_api_key
+LLM_MODEL=MiniMax-M2.7
+```
+
+### LM Studio接入（本地推理）
 开启server
 
 ![image-20250201102953699](README.assets/image-20250201102953699.png)
 
 LM Studio默认可能是4096tokens，要手动改高一点，deepseek-r1-distill-qwen-7b 可以最大128K。
 
+然后配置相应环境变量，比如：
+
+```env
+OPENAI_BASE_URL=http://192.168.50.3:1234/api/v1/
+OPENAI_API_KEY=随意写都行，因为本地部署的LM Studio不验证API Key
+LLM_MODEL=qwen2.5-14b-instruct
+```
 
 
-# 服务流程：
+
+# 最初设计流程：
 
 ```mermaid
 sequenceDiagram
@@ -94,17 +114,47 @@ sequenceDiagram
 ```
 
 
-# CosyVoice接入
-CosyVoice 是一个开源的语音合成工具，它可以根据文本生成高质量的语音。它支持多种语言和风格，并且可以根据用户的需求进行自定义。CosyVoice 可以在 Windows、Linux 和 macOS 上运行。
-按照官方文档部署到conda环境。
-然后把restapi.py放到cosyvoice目录下，然后安装库`pip install Flask`，
-运行`python restapi.py`。
+# Voicebox TTS 接入
 
-# 运行
+Voicebox 是新一代语音合成服务，支持多音色、多引擎配置。通过 `profile_name` 为每个 AI 角色绑定独立嗓音。
 
-本地运行LMStudio，下载好模型，开启开发者服务器。
+![image-20260414114707391](README.assets/image-20260414114707391.png)
 
-客户端: `cd frontend && npm run-script dev`
+## 部署
 
-服务端：`cd backend && npm run-script dev`
+Voicebox 启动后，会自动在本机提供 REST API。本项目通过其 OpenAPI SDK (`openapi-typescript-codegen` 生成 + Node.js 适配) 调用。
+
+### 核心配置 (.env)
+
+```env
+# Voicebox 服务地址
+VOICEBOX_API=http://127.0.0.1:17493
+
+# 主持人/系统播报默认音色 profile_name
+VOICEBOX_HOST_PROFILE_NAME=Rhett-2025
+
+# voicebox 模型配置
+VOICEBOX_ENGINE=qwen
+VOICEBOX_MODEL_SIZE=1.7B
+```
+
+### AI 角色音色
+
+每个 AI 角色在 `backend/src/constants/aiRoles.ts` 中定义 `voiceProfileName`，游戏启动时 VoiceManager 会自动将 profile_name 解析为 profile_id，并调用 `streamSpeechGenerateStreamPost` 合成语音。
+
+固定参数：`language: "zh"`, `engine: "qwen"`, `model_size: "1.7B"`。
+
+> 注意：Voicebox 服务需提前创建好各角色的 profile，或者在服务启动时自动创建（若不存在）。
+
+# LLM 配置
+
+推荐使用 OpenAI 兼容格式：
+
+```env
+OPENAI_BASE_URL=https://api.minimaxi.com/v1
+OPENAI_API_KEY=your_api_key
+LLM_MODEL=MiniMax-M2.7
+```
+
+
 
