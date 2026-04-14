@@ -1,8 +1,7 @@
 import {RoomVO} from "../vo/RoomVO";
 import PlayerVO, {Identity} from "../vo/PlayerVO";
-import {AiManager} from "./AiManager";
-import {AiPlayerNames} from "../constants";
-import {selectRandomPersonas} from "../constants/personas";
+import {AI_ROLES, selectRandomRoles} from "../constants/aiRoles";
+import {DEFAULT_PERSONA_ID, getPersonaById} from "../constants/personas";
 
 export class RoomManager {
     private static instance: RoomManager;
@@ -31,19 +30,24 @@ export class RoomManager {
         //
         room.words = words;
 
-        const playerNum = AiPlayerNames.length;
-        // 为AI玩家随机分配不重复的人格
-        const personas = selectRandomPersonas(playerNum);
+        const playerNum = AI_ROLES.length;
+        // 为本局随机抽取角色（包含姓名/人格/音色）
+        const roles = selectRandomRoles(playerNum);
         //创建AI玩家和人类玩家，先全部设置为统一样子：平民、AI、未出局
         for (let i = 0; i < playerNum; i++) {
+            const role = roles[i];
+            // 角色库异常时，兜底到默认人格，避免整局无法开始
+            const persona = getPersonaById(role.personaId) || getPersonaById(DEFAULT_PERSONA_ID);
             const player = new PlayerVO();
             player.identity = Identity.commoner;
-            player.name = AiPlayerNames[i];
+            player.name = role.name;
             player.number = i + 1;
             player.isAi = true;
             player.dead = false;
             player.word = words[0];
-            player.persona = personas[i];
+            player.persona = persona;
+            player.roleId = role.id;
+            player.voiceProfileName = role.voiceProfileName;
             room.players.push(player);
         }
         // 随机决定人类玩家的编号
@@ -52,6 +56,8 @@ export class RoomManager {
         room.players[humanNumber - 1].isAi = false;
         room.players[humanNumber - 1].name = "桂花糕";
         room.players[humanNumber - 1].persona = undefined;
+        room.players[humanNumber - 1].roleId = undefined;
+        room.players[humanNumber - 1].voiceProfileName = undefined;
 
         // 随机决定卧底玩家的编号
         const undercoverNumber = Math.floor(Math.random() * playerNum) + 1;

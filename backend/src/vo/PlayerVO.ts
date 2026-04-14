@@ -12,6 +12,10 @@ export default class PlayerVO{
     word: string = "";
     // AI 人格（仅AI玩家有值）
     persona?: Persona;
+    // AI 角色库 ID（仅AI玩家有值）
+    roleId?: string;
+    // AI 独立音色 profile_name（仅AI玩家有值）
+    voiceProfileName?: string;
     // 当前是否是AI
     isAi: boolean = false;
 

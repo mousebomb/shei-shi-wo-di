@@ -41,7 +41,6 @@ function parseRetryDelays(raw: string | undefined): number[] {
 // LLM 过载重试延迟（毫秒），例如："1000,3000,10000"
 export const LLM_RETRY_DELAYS_MS = parseRetryDelays(process.env.LLM_RETRY_DELAYS_MS);
 
-export const AiPlayerNames = (process.env.AI_PLAYER_NAMES || '猴哥,八戒,吕布,曹操,关羽,刘备').split(',');
 
 // Voicebox TTS 配置
 export const VOICEBOX_API = process.env.VOICEBOX_API || 'http://127.0.0.1:17493';

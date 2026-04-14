@@ -224,8 +224,8 @@ export default class GameManager {
             // // 跳过ai自己，因为自己的已经在agentDescribeWord中记录到自己的messages中了
             // this.broadcastToRoom(room, player.number, messageContent, conn);
             // 不跳过自己:
-            // AI 玩家使用自身 persona 对应的音色
-            const voice = (await VoiceManager.getInstance().synthesize(describeContent, player.persona?.voiceProfileName));
+            // AI 玩家使用角色库分配的独立音色
+            const voice = (await VoiceManager.getInstance().synthesize(describeContent, player.voiceProfileName));
             this.broadcastToRoom(room, -1, messageContent, conn,player.number,voice);
             room.currentPlayerInputing = false;
             room.currentPlayer++;
@@ -261,8 +261,8 @@ export default class GameManager {
             // 广播同步给所有player的历史消息
             const messageContent = player.getFullName() + ":投票给" + room.players[voteContent.voteToPlayer - 1].getFullName() + "，理由:\"" + voteContent.reason + "\"。";
             // 对玩家，发送msg；对AI，追加aimessage ； 包括AI自己；因为虽然自己的已经在agentVote中记录到自己的messages中了，但记录计票的文案有所不同
-            // AI 玩家使用自身 persona 对应的音色
-            const voice = (await VoiceManager.getInstance().synthesize("投票给"+room.players[voteContent.voteToPlayer-1].getFullName() + "。" + voteContent.reason + "。", player.persona?.voiceProfileName));
+            // AI 玩家使用角色库分配的独立音色
+            const voice = (await VoiceManager.getInstance().synthesize("投票给"+room.players[voteContent.voteToPlayer-1].getFullName() + "。" + voteContent.reason + "。", player.voiceProfileName));
             this.broadcastToRoom(room, -1, messageContent, conn,player.number,voice);
             // // 只发给玩家
             // await conn.sendMsg("Chat", {content: messageContent, time: new Date(),senderId: player.number,voice});

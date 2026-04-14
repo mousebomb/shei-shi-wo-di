@@ -1,7 +1,7 @@
 import { OpenAPI } from '../voicebox/core/OpenAPI';
 import { DefaultService } from '../voicebox/services/DefaultService';
 import { VOICEBOX_API, VOICEBOX_HOST_PROFILE_NAME } from '../constants';
-import { getPersonaProfileNames } from '../constants/personas';
+import { getAiRoleProfileNames } from '../constants/aiRoles';
 
 export default class VoiceManager {
     private static instance: VoiceManager;
@@ -49,7 +49,7 @@ export default class VoiceManager {
         }
 
         // 按配置名校验并尝试补齐（满足“按 profile name 自动找到 profileId”）
-        const configuredNames = new Set([VOICEBOX_HOST_PROFILE_NAME, ...getPersonaProfileNames()].filter(Boolean));
+        const configuredNames = new Set([VOICEBOX_HOST_PROFILE_NAME, ...getAiRoleProfileNames()].filter(Boolean));
         for (const profileName of configuredNames) {
             if (this.profileNameToId.has(profileName)) {
                 continue;
