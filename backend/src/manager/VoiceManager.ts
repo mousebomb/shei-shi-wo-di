@@ -1,6 +1,6 @@
 import { OpenAPI } from '../voicebox/core/OpenAPI';
 import { DefaultService } from '../voicebox/services/DefaultService';
-import { VOICEBOX_API, VOICEBOX_HOST_PROFILE_NAME } from '../constants';
+import {VOICEBOX_API, VOICEBOX_ENGINE, VOICEBOX_HOST_PROFILE_NAME, VOICEBOX_MODEL_SIZE} from '../constants';
 import { getAiRoleProfileNames } from '../constants/aiRoles';
 
 export default class VoiceManager {
@@ -101,8 +101,8 @@ export default class VoiceManager {
                 profile_id: effectiveProfileId,
                 text,
                 language: 'zh',
-                model_size: '1.7B',
-                engine: 'qwen',
+                model_size: VOICEBOX_MODEL_SIZE,
+                engine: VOICEBOX_ENGINE,
             });
 
             // Node.js 下 SDK 返回的是 Uint8Array/Buffer/ArrayBuffer，而不是浏览器 ReadableStream

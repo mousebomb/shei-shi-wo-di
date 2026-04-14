@@ -50,3 +50,7 @@ export const VOICEBOX_HOST_PROFILE_NAME =
 
 /** AI 人格默认声音 profile_name（未单独配置时复用主持人音色） */
 export const VOICEBOX_AI_PROFILE_NAME = process.env.VOICEBOX_AI_PROFILE_NAME || VOICEBOX_HOST_PROFILE_NAME;
+
+//模型配置
+export const VOICEBOX_ENGINE= process.env.VOICEBOX_ENGINE || 'qwen';
+export const VOICEBOX_MODEL_SIZE= process.env.VOICEBOX_MODEL_SIZE || '1.7B';
