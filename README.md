@@ -8,15 +8,17 @@
 
 
 
-# 运行
+## 运行
 
 客户端: `cd frontend && npm run-script dev`
 
 服务端：`cd backend && npm run-script dev`
 
+
+
 ## 效果截图
 
-![screenshot](README.assets/SCR-20250205-neen.png)
+![image-20260414120033753](README.assets/image-20260414120033753.png)
 
 ## LLM接入
 
@@ -145,16 +147,4 @@ VOICEBOX_MODEL_SIZE=1.7B
 固定参数：`language: "zh"`, `engine: "qwen"`, `model_size: "1.7B"`。
 
 > 注意：Voicebox 服务需提前创建好各角色的 profile，或者在服务启动时自动创建（若不存在）。
-
-# LLM 配置
-
-推荐使用 OpenAI 兼容格式：
-
-```env
-OPENAI_BASE_URL=https://api.minimaxi.com/v1
-OPENAI_API_KEY=your_api_key
-LLM_MODEL=MiniMax-M2.7
-```
-
-
 
