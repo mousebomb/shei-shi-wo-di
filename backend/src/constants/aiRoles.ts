@@ -20,12 +20,12 @@ export interface AiRole {
  * 说明：当前统一使用 VOICEBOX_AI_PROFILE_NAME，后续可按角色拆分为不同 profile_name。
  */
 export const AI_ROLES: AiRole[] = [
-    { id: 'monkey_king', name: '猴哥', personaId: 'lively_monkey', voiceProfileName: VOICEBOX_AI_PROFILE_NAME },
-    { id: 'zhu_bajie', name: '八戒', personaId: 'chill_player', voiceProfileName: VOICEBOX_AI_PROFILE_NAME },
-    { id: 'lv_bu', name: '吕布', personaId: 'intuition_player', voiceProfileName: VOICEBOX_AI_PROFILE_NAME },
-    { id: 'cao_cao', name: '曹操', personaId: 'steady_veteran', voiceProfileName: VOICEBOX_AI_PROFILE_NAME },
-    { id: 'guan_yu', name: '关羽', personaId: 'observer', voiceProfileName: VOICEBOX_AI_PROFILE_NAME },
-    { id: 'liu_bei', name: '刘备', personaId: 'humor_master', voiceProfileName: VOICEBOX_AI_PROFILE_NAME },
+    { id: 'monkey_king', name: '猴哥', personaId: 'lively_monkey', voiceProfileName: "猴哥" },
+    { id: 'zhu_bajie', name: '八戒', personaId: 'chill_player', voiceProfileName: "八戒" },
+    { id: 'lv_bu', name: '吕布', personaId: 'intuition_player', voiceProfileName: "吕布" },
+    { id: 'cao_cao', name: '曹操', personaId: 'steady_veteran', voiceProfileName: "曹操" },
+    { id: 'guan_yu', name: '关羽', personaId: 'observer', voiceProfileName: "关羽" },
+    { id: 'liu_bei', name: '刘备', personaId: 'humor_master', voiceProfileName: "刘备" },
 ];
 
 /**
