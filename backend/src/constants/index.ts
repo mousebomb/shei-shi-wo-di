@@ -45,5 +45,9 @@ export const AiPlayerNames = (process.env.AI_PLAYER_NAMES || '猴哥,八戒,吕�
 
 // Voicebox TTS 配置
 export const VOICEBOX_API = process.env.VOICEBOX_API || 'http://127.0.0.1:17493';
-/** 主持人/系统播报用的默认声音 profile_id */
-export const VOICEBOX_HOST_PROFILE_ID = process.env.VOICEBOX_HOST_PROFILE_ID || '732d78a5-dd84-479e-bd5d-2c241a4bf93a';
+/** 主持人/系统播报用的默认声音 profile_name（兼容旧的 VOICEBOX_HOST_PROFILE_ID） */
+export const VOICEBOX_HOST_PROFILE_NAME =
+    process.env.VOICEBOX_HOST_PROFILE_NAME || process.env.VOICEBOX_HOST_PROFILE_ID || 'Rhett-2025';
+
+/** AI 人格默认声音 profile_name（未单独配置时复用主持人音色） */
+export const VOICEBOX_AI_PROFILE_NAME = process.env.VOICEBOX_AI_PROFILE_NAME || VOICEBOX_HOST_PROFILE_NAME;
