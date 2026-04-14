@@ -26,6 +26,8 @@ export const AI_ROLES: AiRole[] = [
     { id: 'cao_cao', name: '曹操', personaId: 'steady_veteran', voiceProfileName: "曹操" },
     { id: 'guan_yu', name: '关羽', personaId: 'observer', voiceProfileName: "关羽" },
     { id: 'liu_bei', name: '刘备', personaId: 'humor_master', voiceProfileName: "刘备" },
+    { id: 'sophie', name: '苏菲', personaId: 'sophie', voiceProfileName: "苏菲（台湾）" },
+    { id: 'kafka', name: '卡夫卡', personaId: 'kafka', voiceProfileName: "卡夫卡" },
 ];
 
 /**
