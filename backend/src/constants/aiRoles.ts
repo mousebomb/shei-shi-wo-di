@@ -28,6 +28,9 @@ export const AI_ROLES: AiRole[] = [
     { id: 'liu_bei', name: '刘备', personaId: 'humor_master', voiceProfileName: "刘备" },
     { id: 'sophie', name: '苏菲', personaId: 'sophie', voiceProfileName: "苏菲（台湾）" },
     { id: 'kafka', name: '卡夫卡', personaId: 'kafka', voiceProfileName: "卡夫卡" },
+    { id: 'firestar', name:'火星', personaId: 'firestar', voiceProfileName: "火星" },
+    { id: 'sandstorm', name: '沙风', personaId: 'sandstorm', voiceProfileName: "沙风" },
+    { id: 'jayfeather', name: '松鸦羽', personaId: 'jayfeather', voiceProfileName: "松鸦羽" },
 ];
 
 /**
