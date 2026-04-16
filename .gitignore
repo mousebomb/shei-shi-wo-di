@@ -2,3 +2,4 @@
 /.idea/CopilotChatHistory.xml
 .env
 /.idea/compiler.xml
+/frontend/test-results
