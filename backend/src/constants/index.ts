@@ -25,7 +25,7 @@ export const LLM_BASE_URL = OPENAI_BASE_URL
 export const LLM_API_KEY = process.env.OPENAI_API_KEY || process.env.LLM_API_KEY || "";
 export const LLM_LOG_V = process.env.LLM_LOG_V === 'true';
 
-const DEFAULT_LLM_RETRY_DELAYS_MS = [1000, 3000, 10000];
+const DEFAULT_LLM_RETRY_DELAYS_MS = [1000, 3000, 10000, 30000, 60000]; // 默认的重试延迟列表（毫秒）
 
 function parseRetryDelays(raw: string | undefined): number[] {
     if (!raw) {
