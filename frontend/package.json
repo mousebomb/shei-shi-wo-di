@@ -18,7 +18,9 @@
   },
   "scripts": {
     "dev": "craco --openssl-legacy-provider  start",
-    "build": "craco --openssl-legacy-provider build"
+    "build": "craco --openssl-legacy-provider build",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed"
   },
   "eslintConfig": {
     "extends": [
